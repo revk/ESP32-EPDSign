@@ -21,7 +21,7 @@ issue:
 	git commit -a -m release
 	git push
 
-set:    epd75 epd154 eps154r
+set:    epd75 epd154 epd154r
 
 epd75:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-EPD75

@@ -253,7 +253,7 @@ web_root (httpd_req_t * req)
       i ("Idle", getidle (&t));
    }
    httpd_resp_sendstr_chunk (req, "<p><a href=/push>Ding!</a></p>");
-   return revk_web_foot (req, 0, 1);
+   return revk_web_foot (req, 0, 1,NULL);
 }
 
 static esp_err_t
