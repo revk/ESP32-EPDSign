@@ -523,6 +523,7 @@ app_main ()
    gfx_unlock ();
    uint32_t lastrefresh = 0;
    uint8_t day = 0;
+   ESP_LOGE(TAG,"Start %dx%d",gfx_width(),gfx_height());
    while (1)
    {
       usleep (100000);
