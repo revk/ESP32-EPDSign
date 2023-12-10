@@ -243,6 +243,7 @@ app_main ()
       gfx_text (3, "W ON K");
       gfx_colour ('R');
       gfx_text (3, "R ON K");
+      gfx_colour ('W');
       gfx_background ('R');
       gfx_text (3, "W ON R");
       gfx_colour ('K');
