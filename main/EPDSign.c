@@ -211,13 +211,13 @@ app_main ()
       }
    }
    gfx_lock ();
-   gfx_clear (255);             // Black
+   gfx_clear (0);        
    gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
    gfx_text (3, "HELLO");
    gfx_text (3, "WORLD");
    gfx_unlock ();
 
-   uint32_t min = 0;
+   uint32_t min = -1;
 
    while (1)
    {
@@ -229,6 +229,9 @@ app_main ()
       struct tm t;
       localtime_r (&now, &t);
       gfx_lock ();
+      gfx_clear(0);
+      gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
+      gfx_7seg (2, "%02d:%02d", t.tm_hour, t.tm_min);
       gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
       gfx_text (3, "DEFAULT");
       gfx_colour ('R');
@@ -237,13 +240,13 @@ app_main ()
       gfx_text (3, "BLACK");
       gfx_colour ('W');
       gfx_background ('K');
-      gfx_text (3, "WHITE");
+      gfx_text (3, "W ON K");
+      gfx_colour ('R');
+      gfx_text (3, "R ON K");
       gfx_background ('R');
-      gfx_text (3, "ON RED");
+      gfx_text (3, "W ON R");
       gfx_colour ('K');
-      gfx_text (3, "BLACK");
-      gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
-      gfx_7seg (5, "%02d:%02d", t.tm_hour, t.tm_min);
+      gfx_text (3, "K ON R");
       gfx_unlock ();
    }
 }
