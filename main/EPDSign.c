@@ -212,6 +212,9 @@ app_main ()
    }
    gfx_lock ();
    gfx_clear (255);             // Black
+   gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
+   gfx_text (3, "HELLO");
+   gfx_text (3, "WORLD");
    gfx_unlock ();
 
    uint32_t min = 0;
@@ -227,7 +230,7 @@ app_main ()
       localtime_r (&now, &t);
       gfx_lock ();
       gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
-      gfx_text(3,"DEFAULT");
+      gfx_text (3, "DEFAULT");
       gfx_colour ('R');
       gfx_text (3, "RED");
       gfx_colour ('K');
@@ -239,8 +242,8 @@ app_main ()
       gfx_text (3, "ON RED");
       gfx_colour ('K');
       gfx_text (3, "BLACK");
-      gfx_pos(gfx_width()-1,gfx_height()-1,GFX_R|GFX_B);
-      gfx_7seg(5,"%02d:%02d",t.tm_hour,t.tm_min);
+      gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
+      gfx_7seg (5, "%02d:%02d", t.tm_hour, t.tm_min);
       gfx_unlock ();
    }
 }
