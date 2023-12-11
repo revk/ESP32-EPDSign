@@ -232,7 +232,7 @@ app_main ()
       gfx_clear(0);
       gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
       gfx_7seg (2, "%02d:%02d", t.tm_hour, t.tm_min);
-      gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
+      gfx_pos (1, 1, GFX_L | GFX_T | GFX_V);
       gfx_text (3, "DEFAULT");
       gfx_colour ('R');
       gfx_text (3, "RED");
