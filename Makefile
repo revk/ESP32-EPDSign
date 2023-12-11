@@ -21,7 +21,7 @@ issue:
 	git commit -a -m release
 	git push
 
-set:    epd75k epd154k epd154r ssd1681
+set:    epd75k epd154k epd154r ssd1681 epd29k
 
 epd75k:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-EPD75K
@@ -33,6 +33,10 @@ epd154k:
 
 epd154r:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-EPD154R
+	@make
+
+epd29k:
+	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-EPD29K
 	@make
 
 ssd1681:

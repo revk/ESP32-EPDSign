@@ -210,6 +210,7 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
+   ESP_LOGE(TAG,"Display %dx%d (%d)",gfx_width(),gfx_height(),gfxflip);
    gfx_lock ();
    gfx_clear (0);        
    gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
@@ -217,8 +218,8 @@ app_main ()
    gfx_text (3, "WORLD");
    gfx_unlock ();
 
-   uint32_t min = -1;
 
+   uint32_t min = 0;
    while (1)
    {
       usleep (100000);
@@ -231,7 +232,7 @@ app_main ()
       gfx_lock ();
       gfx_clear(0);
       gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
-      gfx_7seg (2, "%02d:%02d", t.tm_hour, t.tm_min);
+      gfx_7seg (3, "%02d:%02d", t.tm_hour, t.tm_min);
       gfx_pos (1, 1, GFX_L | GFX_T | GFX_V);
       gfx_text (3, "DEFAULT");
       gfx_colour ('R');
