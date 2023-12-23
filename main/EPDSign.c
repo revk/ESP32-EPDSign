@@ -263,7 +263,7 @@ app_main ()
          gfx_lock ();
          gfx_message (msg);
          gfx_unlock ();
-         override = now + 10;
+         override = up + 10;
       }
       if (override)
       {
