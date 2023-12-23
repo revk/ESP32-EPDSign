@@ -42,6 +42,8 @@ volatile uint32_t override = 0;
 	u8(holdtime,30)	\
 	u32(refresh,3600)	\
 	b(gfxinvert)	\
+	b(showtime)	\
+	s(imageurl,)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
@@ -169,6 +171,77 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    return NULL;
 }
 
+uint8_t *image = NULL;          // Current image
+time_t imagetime = 0;           // Current image time
+int
+getimage (void)
+{
+   if (!*imageurl || revk_link_down ())
+      return 0;
+   time_t now = time (0);
+   ESP_LOGD (TAG, "Get %s", imageurl);
+   const int size = gfx_width () * gfx_height () / 8;
+   int len = 0;
+   uint8_t *buf = NULL;
+   esp_http_client_config_t config = {
+      .url = imageurl,
+      .crt_bundle_attach = esp_crt_bundle_attach,
+   };
+   esp_http_client_handle_t client = esp_http_client_init (&config);
+   int response = 0;
+   if (client)
+   {
+      if (imagetime)
+      {
+         char when[50];
+         struct tm t;
+         gmtime_r (&imagetime, &t);
+         strftime (when, sizeof (when), "%a, %d %b %Y %T GMT", &t);
+
+         esp_http_client_set_header (client, "If-Modified-Since", when);
+      }
+      if (!esp_http_client_open (client, 0))
+      {
+         if (esp_http_client_fetch_headers (client) == size)
+         {
+            buf = mallocspi (size);
+            if (buf)
+               len = esp_http_client_read_response (client, (char *) buf, size);
+         }
+         response = esp_http_client_get_status_code (client);
+         esp_http_client_close (client);
+      }
+      esp_http_client_cleanup (client);
+   }
+   if (response == 304)
+      return response;          // No change - not even logged
+   {
+      jo_t j = jo_object_alloc ();
+      jo_string (j, "url", imageurl);
+      if (response)
+         jo_int (j, "response", response);
+      if (len)
+      {
+         jo_int (j, "len", len);
+         if (len != size)
+            jo_int (j, "expect", size);
+      }
+      revk_error ("image", &j);
+   }
+   if (len == size)
+   {
+      if (gfxinvert)
+         for (int i = 0; i < size; i++)
+            buf[i] ^= 0xFF;
+      if (image && !memcmp (buf, image, size))
+         response = 0;          // No change
+      free (image);
+      image = buf;
+      imagetime = now;
+   }
+   return response;
+}
+
 // --------------------------------------------------------------------------------
 // Web
 #ifdef	CONFIG_REVK_APCONFIG
@@ -197,7 +270,6 @@ app_main ()
 #undef s
       revk_start ();
 
-   ESP_LOGE (TAG, "HTTPD");
 
    // Web interface
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
@@ -226,14 +298,13 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
-   ESP_LOGE (TAG, "Main loop");
+   uint32_t dorefresh = 0;
    uint32_t min = 0;
    while (1)
    {
       usleep (100000);
       time_t now = time (0);
       uint32_t up = uptime ();
-      ESP_LOGE (TAG, "Tick now %lld min %ld override %ld up %ld", now, min, override, up);
       if (wificonnect)
       {
          wificonnect = 0;
@@ -242,11 +313,10 @@ app_main ()
          esp_wifi_sta_get_ap_info (&ap);
          char msg[1000];
          char *p = msg;
-         p +=
-            sprintf (p, "[-6]%s/%s/[6] / /[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", appname, hostname, (char *) ap.ssid,
-                     ap.primary, ap.rssi);
-         if (sta_netif)
+         p += sprintf (p, "[-6]%s/%s/[6] / /", appname, hostname);
+         if (sta_netif && *ap.ssid)
          {
+            p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
             {
                esp_netif_ip_info_t ip;
                if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
@@ -273,15 +343,36 @@ app_main ()
             continue;
       }
       if (now / 60 == min)
-         continue;
+         continue;              // Check / update every minute
       min = now / 60;
-      struct tm t;
-      localtime_r (&now, &t);
+      int response = getimage ();
+      if (response != 200 && image)
+         continue;
       gfx_lock ();
-      gfx_clear (0);
-      gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
-      gfx_7seg (3, "%02d:%02d", t.tm_hour, t.tm_min);
-
+      if (dorefresh < up && showtime)
+      {                         // If doing fast refreshes, update periodically
+         dorefresh = up + refresh;
+         gfx_refresh ();
+      } else if (response == 200)
+         gfx_refresh ();
+      if (image)
+         gfx_load (image);
+      else
+         gfx_clear (0);
+      if (!image && response)
+      {
+         gfx_pos (0, 0, GFX_L | GFX_T);
+         gfx_7seg (9, "%d", response);
+         gfx_pos (0, 100, GFX_L | GFX_T);
+         gfx_text (-1, "%s", imageurl);
+      }
+      if (showtime || !image)
+      {
+         struct tm t;
+         localtime_r (&now, &t);
+         gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
+         gfx_7seg (9, "%02d:%02d", t.tm_hour, t.tm_min);
+      }
       gfx_unlock ();
    }
 }
