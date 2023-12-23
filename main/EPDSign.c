@@ -37,8 +37,7 @@ volatile uint32_t override = 0;
         io(gfxdc,40)    \
         io(gfxrst,41)   \
         io(gfxbusy,42)  \
-        io(rgb,36)      \
-        io(relay,36)    \
+        io(relay,)    \
         u8(gfxflip,6)   \
 	u8(holdtime,30)	\
 	u32(refresh,3600)	\
