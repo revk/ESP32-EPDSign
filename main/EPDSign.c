@@ -198,6 +198,8 @@ app_main ()
 #undef s
       revk_start ();
 
+   ESP_LOGE (TAG, "HTTPD");
+
    // Web interface
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
    config.max_uri_handlers = 5 + revk_num_web_handlers ();
@@ -213,6 +215,7 @@ app_main ()
       gpio_set_direction (port_mask (gfxena), GPIO_MODE_OUTPUT);
       gpio_set_level (port_mask (gfxena), gfxena & PORT_INV ? 0 : 1);   // Enable
    }
+   ESP_LOGE (TAG, "Display %dx%d (%d)", gfx_width (), gfx_height (), gfxflip);
    {
     const char *e = gfx_init (cs: port_mask (gfxcs), sck: port_mask (gfxsck), mosi: port_mask (gfxmosi), dc: port_mask (gfxdc), rst: port_mask (gfxrst), busy: port_mask (gfxbusy), flip: gfxflip, direct: 1, invert:gfxinvert);
       if (e)
@@ -224,14 +227,14 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
-   ESP_LOGE (TAG, "Display %dx%d (%d)", gfx_width (), gfx_height (), gfxflip);
-
+   ESP_LOGE (TAG, "Main loop");
    uint32_t min = 0;
    while (1)
    {
       usleep (100000);
       time_t now = time (0);
       uint32_t up = uptime ();
+      ESP_LOGE (TAG, "Tick now %lld min %ld override %ld up %ld", now, min, override, up);
       if (wificonnect)
       {
          wificonnect = 0;
@@ -240,7 +243,9 @@ app_main ()
          esp_wifi_sta_get_ap_info (&ap);
          char msg[1000];
          char *p = msg;
-         p += sprintf (p, "[-5]%s/%s/[5] / /[5]WiFi/[-5]%s/[5] /Channel %d/RSSI %d/ /", appname, hostname, (char *) ap.ssid, ap.primary, ap.rssi);
+         p +=
+            sprintf (p, "[-6]%s/%s/[6] / /[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", appname, hostname, (char *) ap.ssid,
+                     ap.primary, ap.rssi);
          if (sta_netif)
          {
             {
