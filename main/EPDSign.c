@@ -346,6 +346,8 @@ app_main ()
          continue;              // Check / update every minute
       min = now / 60;
       int response = getimage ();
+      if (response == 200 && !showtime)
+         continue;
       gfx_lock ();
       if (dorefresh < up && showtime)
       {                         // If doing fast refreshes, update periodically
