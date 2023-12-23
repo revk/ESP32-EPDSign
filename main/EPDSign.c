@@ -22,6 +22,9 @@ static const char TAG[] = "EPDSign";
 #define PORT_PU 0x2000
 #define port_mask(p) ((p)&0xFF) // 16 bit
 
+volatile uint8_t wificonnect = 1;
+volatile uint32_t override = 0;
+
 // Dynamic
 
 #define	settings		\
@@ -159,6 +162,11 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    {
       return "";
    }
+   if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6"))
+   {
+      wificonnect = 1;
+      return "";
+   }
    return NULL;
 }
 
@@ -199,8 +207,14 @@ app_main ()
       register_get_uri ("/apple-touch-icon.png", web_icon);
       revk_web_settings_add (webserver);
    }
+   if (gfxena)
    {
-    const char *e = gfx_init (cs: port_mask (gfxcs), sck: port_mask (gfxsck), mosi: port_mask (gfxmosi), dc: port_mask (gfxdc), rst: port_mask (gfxrst), busy: port_mask (gfxbusy), ena: port_mask (gfxena), flip: gfxflip, direct: 1, invert:gfxinvert);
+      gpio_reset_pin (port_mask (gfxena));
+      gpio_set_direction (port_mask (gfxena), GPIO_MODE_OUTPUT);
+      gpio_set_level (port_mask (gfxena), gfxena & PORT_INV ? 0 : 1);   // Enable
+   }
+   {
+    const char *e = gfx_init (cs: port_mask (gfxcs), sck: port_mask (gfxsck), mosi: port_mask (gfxmosi), dc: port_mask (gfxdc), rst: port_mask (gfxrst), busy: port_mask (gfxbusy), flip: gfxflip, direct: 1, invert:gfxinvert);
       if (e)
       {
          ESP_LOGE (TAG, "gfx %s", e);
@@ -210,45 +224,60 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
-   ESP_LOGE(TAG,"Display %dx%d (%d)",gfx_width(),gfx_height(),gfxflip);
-   gfx_lock ();
-   gfx_clear (0);        
-   gfx_pos (0, 0, GFX_L | GFX_T | GFX_V);
-   gfx_text (3, "HELLO");
-   gfx_text (3, "WORLD");
-   gfx_unlock ();
-
+   ESP_LOGE (TAG, "Display %dx%d (%d)", gfx_width (), gfx_height (), gfxflip);
 
    uint32_t min = 0;
    while (1)
    {
       usleep (100000);
       time_t now = time (0);
+      uint32_t up = uptime ();
+      if (wificonnect)
+      {
+         wificonnect = 0;
+         wifi_ap_record_t ap = {
+         };
+         esp_wifi_sta_get_ap_info (&ap);
+         char msg[1000];
+         char *p = msg;
+         p += sprintf (p, "[-5]%s/%s/[5] / /[5]WiFi/[-5]%s/[5] /Channel %d/RSSI %d/ /", appname, hostname, (char *) ap.ssid, ap.primary, ap.rssi);
+         if (sta_netif)
+         {
+            {
+               esp_netif_ip_info_t ip;
+               if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
+                  p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+            }
+#ifdef CONFIG_LWIP_IPV6
+            {
+               esp_ip6_addr_t ip;
+               if (!esp_netif_get_ip6_global (sta_netif, &ip))
+                  p += sprintf (p, "IPv6/[2]" IPV6STR "/ /", IPV62STR (ip));
+            }
+#endif
+         }
+         gfx_lock ();
+         gfx_message (msg);
+         gfx_unlock ();
+         override = now + 10;
+      }
+      if (override)
+      {
+         if (override < up)
+            override = 0;
+         else
+            continue;
+      }
       if (now / 60 == min)
          continue;
       min = now / 60;
       struct tm t;
       localtime_r (&now, &t);
       gfx_lock ();
-      gfx_clear(0);
+      gfx_clear (0);
       gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
       gfx_7seg (3, "%02d:%02d", t.tm_hour, t.tm_min);
-      gfx_pos (1, 1, GFX_L | GFX_T | GFX_V);
-      gfx_text (3, "DEFAULT");
-      gfx_colour ('R');
-      gfx_text (3, "RED");
-      gfx_colour ('K');
-      gfx_text (3, "BLACK");
-      gfx_colour ('W');
-      gfx_background ('K');
-      gfx_text (3, "W ON K");
-      gfx_colour ('R');
-      gfx_text (3, "R ON K");
-      gfx_colour ('W');
-      gfx_background ('R');
-      gfx_text (3, "W ON R");
-      gfx_colour ('K');
-      gfx_text (3, "K ON R");
+
       gfx_unlock ();
    }
 }
