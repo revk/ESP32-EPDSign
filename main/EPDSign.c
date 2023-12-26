@@ -370,8 +370,8 @@ app_main ()
       {
          struct tm t;
          localtime_r (&now, &t);
-         gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
-         gfx_7seg (9, "%02d:%02d", t.tm_hour, t.tm_min);
+         gfx_pos (gfx_width ()/2, gfx_height () - 1, GFX_C | GFX_B);
+         gfx_7seg (5, "%04d-%02d-%02d %02d:%02d",t.tm_year+1900,t.tm_mon+1,t.tm_mday, t.tm_hour, t.tm_min);
       }
       gfx_unlock ();
    }
