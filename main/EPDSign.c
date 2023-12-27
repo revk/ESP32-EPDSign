@@ -313,7 +313,8 @@ app_main ()
          esp_wifi_sta_get_ap_info (&ap);
          char msg[1000];
          char *p = msg;
-         p += sprintf (p, "[-6]%s/%s/[6] / /", appname, hostname);
+         char temp[20];
+         p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
          if (sta_netif && *ap.ssid)
          {
             p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
@@ -370,8 +371,8 @@ app_main ()
       {
          struct tm t;
          localtime_r (&now, &t);
-         gfx_pos (gfx_width ()/2, gfx_height () - 1, GFX_C | GFX_B);
-         gfx_7seg (5, "%04d-%02d-%02d %02d:%02d",t.tm_year+1900,t.tm_mon+1,t.tm_mday, t.tm_hour, t.tm_min);
+         gfx_pos (gfx_width () / 2, gfx_height () - 1, GFX_C | GFX_B);
+         gfx_7seg (5, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
       }
       gfx_unlock ();
    }
