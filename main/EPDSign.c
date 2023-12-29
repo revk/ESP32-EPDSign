@@ -171,12 +171,11 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       char *c = value;
       for (int i = 0; i < leds; i++)
       {
-         uint32_t rgb = revk_rgb (*c);
+         revk_led (strip, i, revk_rgb (*c));
          if (*c)
             c++;
          if (!*c)
             c = value;
-         led_strip_set_pixel (strip, i, rgb >> 16&255, rgb >> 8&255, rgb&255);
       }
       led_strip_refresh (strip);
       return "";
