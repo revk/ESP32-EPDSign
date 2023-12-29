@@ -16,7 +16,6 @@ static const char TAG[] = "EPDSign";
 #include <hal/spi_types.h>
 #include <driver/gpio.h>
 
-#define	MAXGPIO	36
 #define BITFIELDS "-^"
 #define PORT_INV 0x4000
 #define PORT_PU 0x2000
@@ -28,18 +27,17 @@ volatile uint32_t override = 0;
 // Dynamic
 
 #define	settings		\
+	io(rgb,)	\
 	io(gfxena,)	\
-        io(btn2,-8)     \
-        io(btn1,-2)     \
         io(gfxmosi,37)  \
         io(gfxsck,38)   \
         io(gfxcs,39)    \
         io(gfxdc,40)    \
         io(gfxrst,41)   \
         io(gfxbusy,42)  \
-        io(relay,)    \
         u8(gfxflip,6)   \
 	u8(holdtime,30)	\
+	u8(leds,1)	\
 	u32(refresh,3600)	\
 	b(gfxinvert)	\
 	b(showtime)	\
@@ -59,7 +57,7 @@ settings
 #undef b
 #undef s
    httpd_handle_t webserver = NULL;
-SemaphoreHandle_t mutex = NULL;
+led_strip_handle_t strip = NULL;
 
 static void
 web_head (httpd_req_t * req, const char *title)
@@ -251,8 +249,6 @@ getimage (void)
 void
 app_main ()
 {
-   mutex = xSemaphoreCreateBinary ();
-   xSemaphoreGive (mutex);
    revk_boot (&app_callback);
    revk_register ("gfx", 0, sizeof (gfxcs), &gfxcs, "- ", SETTING_SET | SETTING_BITFIELD | SETTING_SECRET);     // Header
 #define io(n,d)           revk_register(#n,0,sizeof(n),&n,"- "#d,SETTING_SET|SETTING_BITFIELD);
@@ -269,7 +265,22 @@ app_main ()
 #undef b
 #undef s
       revk_start ();
-
+   if (leds&&rgb)
+   {
+      led_strip_config_t strip_config = {
+         .strip_gpio_num = (port_mask (rgb)),
+         .max_leds = leds,
+         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .led_model = LED_MODEL_WS2812, // LED strip model
+         .flags.invert_out = ((rgb & PORT_INV) ? 1 : 0),        // whether to invert the output signal (useful when your hardware has a level inverter)
+      };
+      led_strip_rmt_config_t rmt_config = {
+         .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
+         .resolution_hz = 10 * 1000 * 1000,     // 10MHz
+         .flags.with_dma = true,
+      };
+      REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+   }
 
    // Web interface
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
