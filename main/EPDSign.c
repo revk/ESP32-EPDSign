@@ -172,7 +172,6 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       for (int i = 0; i < leds; i++)
       {
          uint32_t rgb = revk_rgb (*c);
-	 ESP_LOGE(TAG,"LED %d RGB %06lX",i,rgb);
          if (*c)
             c++;
          if (!*c)
