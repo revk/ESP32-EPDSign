@@ -166,6 +166,20 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       wificonnect = 1;
       return "";
    }
+   if (strip && !strcmp (suffix, "rgb"))
+   {
+      char *c = value;
+      for (int i = 0; i < leds; i++)
+      {
+         uint32_t rgb = revk_rgb (*c);
+         if (*c)
+            c++;
+         if (!*c)
+            c = value;
+         led_strip_set_pixel (strip, i, rgb >> 16, rgb >> 8, rgb);
+      }
+      led_strip_refresh (strip);
+   }
    return NULL;
 }
 
@@ -265,7 +279,7 @@ app_main ()
 #undef b
 #undef s
       revk_start ();
-   if (leds&&rgb)
+   if (leds && rgb)
    {
       led_strip_config_t strip_config = {
          .strip_gpio_num = (port_mask (rgb)),
