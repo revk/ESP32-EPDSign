@@ -172,13 +172,15 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       for (int i = 0; i < leds; i++)
       {
          uint32_t rgb = revk_rgb (*c);
+	 ESP_LOGE(TAG,"LED %d RGB %06lX",i,rgb);
          if (*c)
             c++;
          if (!*c)
             c = value;
-         led_strip_set_pixel (strip, i, rgb >> 16, rgb >> 8, rgb);
+         led_strip_set_pixel (strip, i, rgb >> 16&255, rgb >> 8&255, rgb&255);
       }
       led_strip_refresh (strip);
+      return "";
    }
    return NULL;
 }
@@ -311,7 +313,6 @@ app_main ()
       gpio_set_direction (port_mask (gfxena), GPIO_MODE_OUTPUT);
       gpio_set_level (port_mask (gfxena), gfxena & PORT_INV ? 0 : 1);   // Enable
    }
-   ESP_LOGE (TAG, "Display %dx%d (%d)", gfx_width (), gfx_height (), gfxflip);
    {
     const char *e = gfx_init (cs: port_mask (gfxcs), sck: port_mask (gfxsck), mosi: port_mask (gfxmosi), dc: port_mask (gfxdc), rst: port_mask (gfxrst), busy: port_mask (gfxbusy), flip: gfxflip, direct: 1, invert:gfxinvert);
       if (e)
