@@ -348,14 +348,26 @@ app_main ()
             }
 #ifdef CONFIG_LWIP_IPV6
             {
-               esp_ip6_addr_t ip;
-               if (!esp_netif_get_ip6_global (sta_netif, &ip))
-                  p += sprintf (p, "IPv6/[2]" IPV6STR "/ /", IPV62STR (ip));
+               esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
+               int n = esp_netif_get_all_ip6 (sta_netif, ip);
+               if (n)
+               {
+                  p += sprintf (p, "IPv6/[2]");
+                  char *q = p;
+                  for (int i = 0; i < n; i++)
+                     p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
+                  while (*q)
+                  {
+                     *q = toupper (*q);
+                     q++;
+                  }
+               }
             }
 #endif
          }
          ESP_LOGE (TAG, "%s", msg);
          gfx_lock ();
+         gfx_refresh ();
          gfx_message (msg);
          gfx_unlock ();
          override = up + 10;
