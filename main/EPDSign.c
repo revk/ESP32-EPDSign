@@ -321,6 +321,10 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
+   gfx_lock ();
+   gfx_clear (0);
+   gfx_refresh ();
+   gfx_unlock ();
    uint32_t dorefresh = 0;
    uint32_t min = 0;
    while (1)
@@ -367,7 +371,7 @@ app_main ()
          }
          ESP_LOGE (TAG, "%s", msg);
          gfx_lock ();
-         gfx_refresh ();
+         //gfx_refresh ();
          gfx_message (msg);
          gfx_unlock ();
          override = up + 10;
