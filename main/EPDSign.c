@@ -147,7 +147,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    char value[1000];
    int len = 0;
    *value = 0;
-   if (j)
+   if (j && jo_here (j) == JO_STRING)
    {
       len = jo_strncpy (j, value, sizeof (value));
       if (len < 0)
@@ -354,6 +354,7 @@ app_main ()
             }
 #endif
          }
+         ESP_LOGE (TAG, "%s", msg);
          gfx_lock ();
          gfx_message (msg);
          gfx_unlock ();
@@ -362,16 +363,19 @@ app_main ()
       if (override)
       {
          if (override < up)
-            override = 0;
+            min = override = 0;
          else
             continue;
       }
       if (now / 60 == min)
          continue;              // Check / update every minute
-      min = now / 60;
       int response = getimage ();
-      if (response != 200 && !showtime)
+      if (response != 200 && !showtime && min)
+      {
+         min = now / 60;
          continue;
+      }
+      min = now / 60;
       gfx_lock ();
       if (dorefresh < up && showtime)
       {                         // If doing fast refreshes, update periodically
