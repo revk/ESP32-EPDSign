@@ -171,7 +171,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       char *c = value;
       for (int i = 0; i < leds; i++)
       {
-         revk_led (strip, i, revk_rgb (*c));
+         revk_led (strip, i, 255, revk_rgb (*c));
          if (*c)
             c++;
          if (!*c)
@@ -209,7 +209,6 @@ getimage (void)
          struct tm t;
          gmtime_r (&imagetime, &t);
          strftime (when, sizeof (when), "%a, %d %b %Y %T GMT", &t);
-
          esp_http_client_set_header (client, "If-Modified-Since", when);
       }
       if (!esp_http_client_open (client, 0))
@@ -371,7 +370,7 @@ app_main ()
          continue;              // Check / update every minute
       min = now / 60;
       int response = getimage ();
-      if (response == 200 && !showtime)
+      if (response != 200 && !showtime)
          continue;
       gfx_lock ();
       if (dorefresh < up && showtime)
