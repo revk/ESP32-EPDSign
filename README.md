@@ -1,3 +1,5 @@
+<img src=Example.jpg width=33% align=right>
+
 # ESP32-EPDSign
 
 This is a general purpose e-paper sign module. It also allows for modules with WS2812 RGB LEDs (e.g. [7.5" Waveshare driver](https://www.amazon.co.uk/dp/B0CPYJ19NM)).
