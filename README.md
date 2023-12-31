@@ -39,3 +39,11 @@ It is recommended that you make the new file in the same file system, e.g. `imag
 ### http
 
 The module can use `https` (with letsencrypt certificate), but it is recommended you use `http` on a local network if you can do so safely, as `https` uses a lot more resources on the ESP module.
+
+## Connecting it to Wi-Fi
+
+When you first plug in the device, it will boot up and then expose a Wi-Fi access point, to which you can connect. It will have an SSID like `EPDSign-serialnumber`.
+
+Once connected to that SSID, you can then connect to the web server running on the device, at http://10.149.72.1.
+
+If you do not get the Settings page immediately, click "Settings" at the bottom of the landing page. Here, you can configure your own Wi-Fi network.
