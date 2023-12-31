@@ -321,7 +321,10 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
+   gfx_lock ();
+   gfx_clear (0);
    gfx_refresh ();
+   gfx_unlock ();
    uint32_t dorefresh = 0;
    uint32_t min = 0;
    while (1)

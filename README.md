@@ -1,3 +1,5 @@
+<img src=Example.jpg width=33% align=right>
+
 # ESP32-EPDSign
 
 This is a general purpose e-paper sign module. It also allows for modules with WS2812 RGB LEDs (e.g. [7.5" Waveshare driver](https://www.amazon.co.uk/dp/B0CPYJ19NM)).
@@ -8,7 +10,13 @@ It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT c
 
 It checks `imageurl` every minute, and if it has changed it updates the display.
 
+<<<<<<< HEAD
 It can also overlay a date/time on the bottom of the display if `showtime` is set. Set `showtime` to the size you want a clock.
+=======
+It can also overlay a date/time on the bottom of the display if `showtime` is set. This set to the size of the clock, up to 20.
+
+Both settings can be set via the web interface *Settings*.
+>>>>>>> 575d8391691e8bba633b47b60ad2f6a693f32151
 
 ## Image files
 
@@ -39,3 +47,12 @@ It is recommended that you make the new file in the same file system, e.g. `imag
 ### http
 
 The module can use `https` (with letsencrypt certificate), but it is recommended you use `http` on a local network if you can do so safely, as `https` uses a lot more resources on the ESP module.
+<<<<<<< HEAD
+=======
+
+## Setting up WiFi
+
+As per the [The RevK library](https://github.com/revk/ESP32-RevK/blob/master/revk-user.md), initial WiFi config can be done if the devices is not already on WiFi. In thsi case it appears as a WiFi access point, e.g. `EPDSign-` and MAC address.
+
+Connect to this. On an iPhone the page automatically loads, in other cases you need to check the WiFi settings to see the *router address* (normally starting `10.`). Enter this in your browser (with `http://` prefix is necessary) to get to the settings page.
+>>>>>>> 575d8391691e8bba633b47b60ad2f6a693f32151
