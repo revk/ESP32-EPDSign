@@ -41,13 +41,13 @@ volatile uint32_t override = 0;
 	u32(refresh,3600)	\
 	b(gfxinvert)	\
 	u8(showtime,0)	\
-	s(imageurl,)	\
+	sl(imageurl,)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
 #define u8(n,d) uint8_t n;
 #define b(n) uint8_t n;
-#define s(n,d) char * n;
+#define sl(n,d) char * n;
 #define io(n,d)           uint16_t n;
 settings
 #undef io
@@ -55,7 +55,7 @@ settings
 #undef s8
 #undef u8
 #undef b
-#undef s
+#undef sl
    httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
@@ -269,14 +269,14 @@ app_main ()
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define s(n,d) revk_register(#n,0,0,&n,#d,0);
+#define sl(n,d) revk_register(#n,0,0,&n,#d,SETTING_LIVE);
    settings
 #undef io
 #undef u32
 #undef s8
 #undef u8
 #undef b
-#undef s
+#undef sl
       revk_start ();
    if (leds && rgb)
    {
@@ -321,7 +321,7 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
-   gfx_refresh();
+   gfx_refresh ();
    uint32_t dorefresh = 0;
    uint32_t min = 0;
    while (1)
@@ -411,11 +411,24 @@ app_main ()
          struct tm t;
          localtime_r (&now, &t);
          gfx_pos (gfx_width () / 2, gfx_height () - 1, GFX_C | GFX_B);
-         if (showtime * (6*15+1) <= gfx_width ())        // Datetime fits
+         if (showtime * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
             gfx_7seg (showtime, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
             gfx_7seg (showtime, "%02d:%02d", t.tm_hour, t.tm_min);
       }
       gfx_unlock ();
    }
+}
+
+void
+revk_web_extra (httpd_req_t * req)
+{
+   httpd_resp_sendstr_chunk (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='");
+   if (*imageurl)
+      httpd_resp_sendstr_chunk (req, imageurl);
+   httpd_resp_sendstr_chunk (req, "'></td><td><tr><td>ShowTime</td><td><input size=2 name=showtime value='");
+   char t[22];
+   sprintf (t, "%d", showtime);
+   httpd_resp_sendstr_chunk (req, t);
+   httpd_resp_sendstr_chunk (req, "'>size</td></tr>");
 }
