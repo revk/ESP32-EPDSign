@@ -38,7 +38,7 @@ volatile uint32_t override = 0;
         u8(gfxflip,6)   \
 	u8(holdtime,30)	\
 	u8(leds,1)	\
-	u32(refresh,3600)	\
+	u32(refresh,86400)	\
 	b(gfxinvert)	\
 	u8(showtime,0)	\
 	s(imageurl,)	\
