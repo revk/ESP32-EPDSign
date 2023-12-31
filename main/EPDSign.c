@@ -41,13 +41,13 @@ volatile uint32_t override = 0;
 	u32(refresh,3600)	\
 	b(gfxinvert)	\
 	u8(showtime,0)	\
-	sl(imageurl,)	\
+	s(imageurl,)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
 #define u8(n,d) uint8_t n;
 #define b(n) uint8_t n;
-#define sl(n,d) char * n;
+#define s(n,d) char * n;
 #define io(n,d)           uint16_t n;
 settings
 #undef io
@@ -55,7 +55,7 @@ settings
 #undef s8
 #undef u8
 #undef b
-#undef sl
+#undef s
    httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
@@ -269,14 +269,14 @@ app_main ()
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define sl(n,d) revk_register(#n,0,0,&n,#d,SETTING_LIVE);
+#define s(n,d) revk_register(#n,0,0,&n,#d,0);
    settings
 #undef io
 #undef u32
 #undef s8
 #undef u8
 #undef b
-#undef sl
+#undef s
       revk_start ();
    if (leds && rgb)
    {
