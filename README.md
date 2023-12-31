@@ -8,7 +8,7 @@ It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT c
 
 It checks `imageurl` every minute, and if it has changed it updates the display.
 
-It can also overlay a date/time on the bottom of the display if `showtime` is set.
+It can also overlay a date/time on the bottom of the display if `showtime` is set. Set `showtime` to the size you want a clock.
 
 ## Image files
 

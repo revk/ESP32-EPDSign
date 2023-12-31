@@ -40,7 +40,7 @@ volatile uint32_t override = 0;
 	u8(leds,1)	\
 	u32(refresh,3600)	\
 	b(gfxinvert)	\
-	b(showtime)	\
+	u8(showtime,0)	\
 	s(imageurl,)	\
 
 #define u32(n,d)        uint32_t n;
@@ -321,10 +321,7 @@ app_main ()
          revk_error ("gfx", &j);
       }
    }
-   gfx_lock ();
-   gfx_clear (0);
-   gfx_refresh ();
-   gfx_unlock ();
+   gfx_refresh();
    uint32_t dorefresh = 0;
    uint32_t min = 0;
    while (1)
@@ -371,7 +368,6 @@ app_main ()
          }
          ESP_LOGE (TAG, "%s", msg);
          gfx_lock ();
-         //gfx_refresh ();
          gfx_message (msg);
          gfx_unlock ();
          override = up + 10;
@@ -415,7 +411,10 @@ app_main ()
          struct tm t;
          localtime_r (&now, &t);
          gfx_pos (gfx_width () / 2, gfx_height () - 1, GFX_C | GFX_B);
-         gfx_7seg (5, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
+         if (showtime * (6*15+1) <= gfx_width ())        // Datetime fits
+            gfx_7seg (showtime, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
+         else
+            gfx_7seg (showtime, "%02d:%02d", t.tm_hour, t.tm_min);
       }
       gfx_unlock ();
    }
