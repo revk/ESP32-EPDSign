@@ -44,6 +44,10 @@ It is recommended that you make the new file in the same file system, e.g. `imag
 
 The module can use `https` (with letsencrypt certificate), but it is recommended you use `http` on a local network if you can do so safely, as `https` uses a lot more resources on the ESP module.
 
+## LED Strip
+
+If the board is fitted with a colour LED strip then the `rgb` command can be used to set the colour(s). The payload is a strip of colour characters from `RGBCMYK` (lower case being dimmer), which is repeated. E.g. sending `R` sets all LEDs red, `GY` would be alternating green/yellow. By sending a long enough string you can set the colours of all LEDs individually. 
+
 ## Setting up WiFi
 
 As per the [The RevK library](https://github.com/revk/ESP32-RevK/blob/master/revk-user.md), initial WiFi config can be done if the devices is not already on WiFi. In thsi case it appears as a WiFi access point, e.g. `EPDSign-` and MAC address.
