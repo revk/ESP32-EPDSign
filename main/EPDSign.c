@@ -42,7 +42,7 @@ volatile uint32_t override = 0;
 	b(gfxinvert)	\
 	u8(showtime,0)	\
 	s(imageurl,)	\
-	s(lights,RG)	\
+	s(lights,RGB)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
