@@ -42,6 +42,7 @@ volatile uint32_t override = 0;
 	b(gfxinvert)	\
 	u8(showtime,0)	\
 	s(imageurl,)	\
+	s(lights,RG)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
@@ -141,6 +142,23 @@ gfx_qr (const char *value, int s)
    return NULL;
 }
 
+void
+showlights (const char *rgb)
+{
+   if (!strip)
+      return;
+   const char *c = rgb;
+   for (int i = 0; i < leds; i++)
+   {
+      revk_led (strip, i, 255, revk_rgb (*c));
+      if (*c)
+         c++;
+      if (!*c)
+         c = rgb;
+   }
+   led_strip_refresh (strip);
+}
+
 const char *
 app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
@@ -168,16 +186,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    }
    if (strip && !strcmp (suffix, "rgb"))
    {
-      char *c = value;
-      for (int i = 0; i < leds; i++)
-      {
-         revk_led (strip, i, 255, revk_rgb (*c));
-         if (*c)
-            c++;
-         if (!*c)
-            c = value;
-      }
-      led_strip_refresh (strip);
+      showlights (value);
       return "";
    }
    return NULL;
@@ -293,6 +302,7 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+      showlights (lights);
    }
 
    // Web interface
@@ -433,5 +443,8 @@ revk_web_extra (httpd_req_t * req)
    char t[22];
    sprintf (t, "%d", showtime);
    httpd_resp_sendstr_chunk (req, t);
-   httpd_resp_sendstr_chunk (req, "'>size</td></tr>");
+   httpd_resp_sendstr_chunk (req, "'>size</td></tr><tr><td>LEDs</td><td><input size=20 name=lights value='");
+   if (*lights)
+      httpd_resp_sendstr_chunk (req, lights);
+   httpd_resp_sendstr_chunk (req, "'></td></tr>");
 }
