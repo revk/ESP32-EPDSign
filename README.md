@@ -21,7 +21,7 @@ The `imageurl` is fetched with a query string when there is a seasonal message a
 |Character|Season|When|
 |---------|------|----|
 |`Y`|New Year|1st-7th Jan|
-|`E`|Easter|Good Friday to Easter Sunday|
+|`E`|Easter|Good Friday to Easter Monday|
 |`H`|Halloween|From 4pm on 31st Oct|
 |`X`|From 1st to 25th Dec|
 
