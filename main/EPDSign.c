@@ -26,7 +26,7 @@ static struct
    uint8_t wificonnect:1;
    uint8_t redraw:1;
    uint8_t lightoverride:1;
-} volatile b={0};
+} volatile b = { 0 };
 
 volatile uint32_t override = 0;
 
@@ -70,9 +70,9 @@ static void
 web_head (httpd_req_t * req, const char *title)
 {
    revk_web_head (req, title);
-   revk_web_send (req, "<style>"     //
-                             "body{font-family:sans-serif;background:#8cf;}"    //
-                             "</style><body><h1>%s</h1>",title?:"");
+   revk_web_send (req, "<style>"        //
+                  "body{font-family:sans-serif;background:#8cf;}"       //
+                  "</style><body><h1>%s</h1>", title ? : "");
 }
 
 static esp_err_t
@@ -211,12 +211,22 @@ getimage (void)
    if (!*imageurl || revk_link_down ())
       return 0;
    time_t now = time (0);
-   ESP_LOGD (TAG, "Get %s", imageurl);
+   int l = strlen (imageurl);
+   char *url = mallocspi (l + 3);
+   strcpy (url, imageurl);
+   char season = revk_season (time (0));
+   if (season)
+   {
+      url[l++] = '?';
+      url[l++] = season;
+      url[l] = 0;
+   }
+   ESP_LOGD (TAG, "Get %s", url);
    const int size = gfx_width () * gfx_height () / 8;
    int len = 0;
    uint8_t *buf = NULL;
    esp_http_client_config_t config = {
-      .url = imageurl,
+      .url = url,
       .crt_bundle_attach = esp_crt_bundle_attach,
    };
    esp_http_client_handle_t client = esp_http_client_init (&config);
@@ -244,32 +254,34 @@ getimage (void)
       }
       esp_http_client_cleanup (client);
    }
-   if (response == 304)
-      return response;          // No change - not even logged
+   if (response != 304)
    {
-      jo_t j = jo_object_alloc ();
-      jo_string (j, "url", imageurl);
-      if (response)
-         jo_int (j, "response", response);
-      if (len)
       {
-         jo_int (j, "len", len);
-         if (len != size)
-            jo_int (j, "expect", size);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "url", url);
+         if (response)
+            jo_int (j, "response", response);
+         if (len)
+         {
+            jo_int (j, "len", len);
+            if (len != size)
+               jo_int (j, "expect", size);
+         }
+         revk_error ("image", &j);
       }
-      revk_error ("image", &j);
+      if (len == size)
+      {
+         if (gfxinvert)
+            for (int i = 0; i < size; i++)
+               buf[i] ^= 0xFF;
+         if (image && !memcmp (buf, image, size))
+            response = 0;       // No change
+         free (image);
+         image = buf;
+         imagetime = now;
+      }
    }
-   if (len == size)
-   {
-      if (gfxinvert)
-         for (int i = 0; i < size; i++)
-            buf[i] ^= 0xFF;
-      if (image && !memcmp (buf, image, size))
-         response = 0;          // No change
-      free (image);
-      image = buf;
-      imagetime = now;
-   }
+   free (url);
    return response;
 }
 
@@ -448,7 +460,7 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"//
-		   "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"//
-		   "<tr><td>LEDs</td><td><input size=20 name=lights value='%s'></td></tr>",imageurl,showtime,lights);
+   revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"     //
+                  "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"      //
+                  "<tr><td>LEDs</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, showtime, lights);
 }
