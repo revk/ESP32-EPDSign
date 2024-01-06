@@ -16,10 +16,11 @@ These settings can be set via the web interface *Settings* and apply live withou
 
 ## Seasonal variations
 
-The `imageurl` is fetched with a query string when there is a seasonal message as follows, e.g. `?E`.
+The `imageurl` is fetched with a query string when there is a seasonal message as follows, e.g. `?E`. Alternatively, if the URL contains a `*` it is replaced with the seasonal code (or `-` by default).
 
 |Character|Season|When|
 |---------|------|----|
+|`M`|Full Moon|±12 hours of full moon|
 |`Y`|New Year|1st-7th Jan|
 |`E`|Easter|Good Friday to Easter Monday|
 |`H`|Halloween|From 4pm on 31st Oct|

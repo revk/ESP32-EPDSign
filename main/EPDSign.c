@@ -219,6 +219,10 @@ getimage (void)
    if (now < revk_last_moon (now) + 12 * 3600 || now > revk_next_moon (now) - 12 * 3600)
       season = 'M';
 #endif
+   char *s=strrchr(url);
+   if(s)
+	   *s=(season?:'-');
+   else
    if (season)
    {
       url[l++] = '?';
