@@ -216,7 +216,7 @@ getimage (void)
    strcpy (url, imageurl);
    char season = revk_season (now);
 #ifdef  CONFIG_REVK_LUNAR
-   if (now < revk_last_moon (t) + 12 * 3600 || t > revk_next_moon (t) - 12 * 3600)
+   if (now < revk_last_moon (now) + 12 * 3600 || t > revk_next_moon (now) - 12 * 3600)
       season = 'M';
 #endif
    if (season)
