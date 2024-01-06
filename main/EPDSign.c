@@ -21,12 +21,12 @@ static const char TAG[] = "EPDSign";
 #define PORT_PU 0x2000
 #define port_mask(p) ((p)&0xFF) // 16 bit
 
-static struct volatile
+static struct
 {                               // Flags
    uint8_t wificonnect:1;
    uint8_t redraw:1;
    uint8_t lightoverride:1;
-} b;
+} volatile b={0};
 
 volatile uint32_t override = 0;
 
