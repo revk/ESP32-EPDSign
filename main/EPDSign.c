@@ -70,12 +70,9 @@ static void
 web_head (httpd_req_t * req, const char *title)
 {
    revk_web_head (req, title);
-   httpd_resp_sendstr_chunk (req, "<style>"     //
+   revk_web_send (req, "<style>"     //
                              "body{font-family:sans-serif;background:#8cf;}"    //
-                             "</style><body><h1>");
-   if (title)
-      httpd_resp_sendstr_chunk (req, title);
-   httpd_resp_sendstr_chunk (req, "</h1>");
+                             "</style><body><h1>%s</h1>",title?:"");
 }
 
 static esp_err_t
@@ -451,15 +448,7 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   httpd_resp_sendstr_chunk (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='");
-   if (*imageurl)
-      httpd_resp_sendstr_chunk (req, imageurl);
-   httpd_resp_sendstr_chunk (req, "'></td><td><tr><td>ShowTime</td><td><input size=2 name=showtime value='");
-   char t[22];
-   sprintf (t, "%d", showtime);
-   httpd_resp_sendstr_chunk (req, t);
-   httpd_resp_sendstr_chunk (req, "'>size</td></tr><tr><td>LEDs</td><td><input size=20 name=lights value='");
-   if (*lights)
-      httpd_resp_sendstr_chunk (req, lights);
-   httpd_resp_sendstr_chunk (req, "'></td></tr>");
+   revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"//
+		   "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"//
+		   "<tr><td>LEDs</td><td><input size=20 name=lights value='%s'></td></tr>",imageurl,showtime,lights);
 }
