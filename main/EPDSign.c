@@ -29,6 +29,8 @@ static struct
 } volatile b = { 0 };
 
 volatile uint32_t override = 0;
+uint8_t *image = NULL;          // Current image
+time_t imagetime = 0;           // Current image time
 
 // Dynamic
 
@@ -180,6 +182,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       return NULL;              //Not for us or not a command from main MQTT
    if (!strcmp (suffix, "setting"))
    {
+      imagetime = 0;
       b.redraw = 1;
       if (!b.lightoverride)
          showlights (lights);
@@ -203,8 +206,6 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    return NULL;
 }
 
-uint8_t *image = NULL;          // Current image
-time_t imagetime = 0;           // Current image time
 int
 getimage (void)
 {
@@ -261,6 +262,7 @@ getimage (void)
       }
       esp_http_client_cleanup (client);
    }
+   ESP_LOGD (TAG, "Get %s %d", url, response);
    if (response != 304)
    {
       {
