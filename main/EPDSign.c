@@ -215,6 +215,10 @@ getimage (void)
    char *url = mallocspi (l + 3);
    strcpy (url, imageurl);
    char season = revk_season (time (0));
+#ifdef  CONFIG_REVK_LUNAR
+   if (*imagemoon && (t < revk_last_moon (t) + 12 * 3600 || t > revk_next_moon (t) - 12 * 3600))
+      season = 'M';
+#endif
    if (season)
    {
       url[l++] = '?';
