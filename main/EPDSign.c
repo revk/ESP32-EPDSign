@@ -41,14 +41,14 @@ volatile uint32_t override = 0;
 	u32(refresh,86400)	\
 	b(gfxinvert)	\
 	u8(showtime,0)	\
-	s(imageurl,)	\
-	s(lights,RGB)	\
+	sl(imageurl,)	\
+	sl(lights,RGB)	\
 
 #define u32(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
 #define u8(n,d) uint8_t n;
 #define b(n) uint8_t n;
-#define s(n,d) char * n;
+#define sl(n,d) char * n;
 #define io(n,d)           uint16_t n;
 settings
 #undef io
@@ -56,7 +56,7 @@ settings
 #undef s8
 #undef u8
 #undef b
-#undef s
+#undef sl
    httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
@@ -175,6 +175,10 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    }
    if (client || !prefix || target || strcmp (prefix, prefixcommand) || !suffix)
       return NULL;              //Not for us or not a command from main MQTT
+   if (!strcmp (suffix, "setting"))
+   {
+      return "";
+   }
    if (!strcmp (suffix, "connect"))
    {
       return "";
@@ -278,14 +282,14 @@ app_main ()
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define s(n,d) revk_register(#n,0,0,&n,#d,0);
+#define sl(n,d) revk_register(#n,0,0,&n,#d,SETTING_LIVE);
    settings
 #undef io
 #undef u32
 #undef s8
 #undef u8
 #undef b
-#undef s
+#undef sl
       revk_start ();
    if (leds && rgb)
    {
