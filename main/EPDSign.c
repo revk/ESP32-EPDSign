@@ -21,7 +21,13 @@ static const char TAG[] = "EPDSign";
 #define PORT_PU 0x2000
 #define port_mask(p) ((p)&0xFF) // 16 bit
 
-volatile uint8_t wificonnect = 1;
+static struct volatile
+{                               // Flags
+   uint8_t wificonnect:1;
+   uint8_t redraw:1;
+   uint8_t lightoverride:1;
+} b;
+
 volatile uint32_t override = 0;
 
 // Dynamic
@@ -177,6 +183,9 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       return NULL;              //Not for us or not a command from main MQTT
    if (!strcmp (suffix, "setting"))
    {
+      b.redraw = 1;
+      if (!b.lightoverride)
+         showlights (lights);
       return "";
    }
    if (!strcmp (suffix, "connect"))
@@ -185,11 +194,12 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    }
    if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6"))
    {
-      wificonnect = 1;
+      b.wificonnect = 1;
       return "";
    }
    if (strip && !strcmp (suffix, "rgb"))
    {
+      b.lightoverride = 1;
       showlights (value);
       return "";
    }
@@ -346,9 +356,9 @@ app_main ()
       usleep (100000);
       time_t now = time (0);
       uint32_t up = uptime ();
-      if (wificonnect)
+      if (b.wificonnect)
       {
-         wificonnect = 0;
+         b.wificonnect = 0;
          wifi_ap_record_t ap = {
          };
          esp_wifi_sta_get_ap_info (&ap);
@@ -396,14 +406,15 @@ app_main ()
          else
             continue;
       }
-      if (now / 60 == min)
+      if (now / 60 == min && !b.redraw)
          continue;              // Check / update every minute
       int response = getimage ();
-      if (response != 200 && !showtime && min)
+      if (response != 200 && !showtime && min && !b.redraw)
       {
          min = now / 60;
          continue;
       }
+      b.redraw = 0;
       min = now / 60;
       gfx_lock ();
       if (dorefresh < up && showtime)
