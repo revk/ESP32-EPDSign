@@ -347,6 +347,7 @@ app_main ()
       jo_int (j, "lighton", 1700);
       jo_int (j, "lightoff", 2200);
       jo_int (j, "recheck", 3600);
+      jo_int (j, "startup", 3);
       revk_setting (j);
       jo_free (&j);
    }
@@ -467,7 +468,7 @@ app_main ()
       {
          int hhmm = t.tm_hour * 100 + t.tm_min;
          showlights (lighton == lightoff || (lighton < lightoff && lighton <= hhmm && lightoff > hhmm)
-                     || (lightoff > lighton && (lighton <= hhmm || lightoff > hhmm)) ? lights : "");
+                     || (lightoff < lighton && (lighton <= hhmm || lightoff > hhmm)) ? lights : "");
       }
       b.redraw = 0;
       int response = 0;
