@@ -344,6 +344,7 @@ app_main ()
       jo_string (j, "imageurl", "http://loft.belmont.cymru/EPD/Cinnamon*.mono");
       jo_string (j, "otahost", "ota.revk.uk");
       jo_string (j, "mqtthost", "testmqtt.revk.uk");
+      jo_string (j, "hostname", "Clock");
       jo_int (j, "lighton", 1700);
       jo_int (j, "lightoff", 2200);
       jo_int (j, "recheck", 3600);
