@@ -16,7 +16,7 @@ These settings can be set via the web interface *Settings* and apply live withou
 
 ## Seasonal variations
 
-The `imageurl` is fetched with a query string when there is a seasonal message as follows, e.g. `?E`. Alternatively, if the URL contains a `*` it is replaced with the seasonal code (or `-` by default).
+The `imageurl` is fetched with a query string when there is a seasonal message as follows, e.g. `?E`. Alternatively, if the URL contains a `*` it is replaced with the seasonal code (or removed is no code).
 
 |Character|Season|When|
 |---------|------|----|

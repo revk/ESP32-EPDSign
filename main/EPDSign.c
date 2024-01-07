@@ -45,8 +45,10 @@ time_t imagetime = 0;           // Current image time
         io(gfxbusy,42)  \
         u8(gfxflip,6)   \
 	u8(holdtime,30)	\
+	u8(startup,10)	\
 	u8(leds,1)	\
 	u32(refresh,86400)	\
+	u32(recheck,60)	\
 	b(gfxinvert)	\
 	u8(showtime,0)	\
 	sl(imageurl,)	\
@@ -222,8 +224,13 @@ getimage (void)
 #endif
    char *s = strrchr (url, '*');
    if (s)
-      *s = (season ? : '-');
-   else if (season)
+   {
+      if (season)
+         *s = season;
+      else
+         while (*s++)
+            s[-1] = *s;
+   } else if (season)
    {
       url[l++] = '?';
       url[l++] = season;
@@ -367,8 +374,9 @@ app_main ()
    gfx_clear (0);
    gfx_refresh ();
    gfx_unlock ();
-   uint32_t dorefresh = 0;
+   uint32_t fresh = 0;
    uint32_t min = 0;
+   uint32_t check = 0;
    while (1)
    {
       usleep (100000);
@@ -377,45 +385,48 @@ app_main ()
       if (b.wificonnect)
       {
          b.wificonnect = 0;
-         wifi_ap_record_t ap = {
-         };
-         esp_wifi_sta_get_ap_info (&ap);
-         char msg[1000];
-         char *p = msg;
-         char temp[20];
-         p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
-         if (sta_netif && *ap.ssid)
+         override = up + startup;
+         if (startup)
          {
-            p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
+            wifi_ap_record_t ap = {
+            };
+            esp_wifi_sta_get_ap_info (&ap);
+            char msg[1000];
+            char *p = msg;
+            char temp[20];
+            p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+            if (sta_netif && *ap.ssid)
             {
-               esp_netif_ip_info_t ip;
-               if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
-                  p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
-            }
-#ifdef CONFIG_LWIP_IPV6
-            {
-               esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
-               int n = esp_netif_get_all_ip6 (sta_netif, ip);
-               if (n)
+               p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
                {
-                  p += sprintf (p, "IPv6/[2]");
-                  char *q = p;
-                  for (int i = 0; i < n; i++)
-                     p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
-                  while (*q)
+                  esp_netif_ip_info_t ip;
+                  if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
+                     p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+               }
+#ifdef CONFIG_LWIP_IPV6
+               {
+                  esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
+                  int n = esp_netif_get_all_ip6 (sta_netif, ip);
+                  if (n)
                   {
-                     *q = toupper (*q);
-                     q++;
+                     p += sprintf (p, "IPv6/[2]");
+                     char *q = p;
+                     for (int i = 0; i < n; i++)
+                        p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
+                     while (*q)
+                     {
+                        *q = toupper (*q);
+                        q++;
+                     }
                   }
                }
-            }
 #endif
+            }
+            ESP_LOGE (TAG, "%s", msg);
+            gfx_lock ();
+            gfx_message (msg);
+            gfx_unlock ();
          }
-         ESP_LOGE (TAG, "%s", msg);
-         gfx_lock ();
-         gfx_message (msg);
-         gfx_unlock ();
-         override = up + 10;
       }
       if (override)
       {
@@ -426,27 +437,29 @@ app_main ()
       }
       if (now / 60 == min && !b.redraw)
          continue;              // Check / update every minute
-      int response = getimage ();
-      if (response != 200 && !showtime && min && !b.redraw)
-      {
-         min = now / 60;
-         continue;
-      }
-      b.redraw = 0;
       min = now / 60;
+      b.redraw = 0;
       gfx_lock ();
-      if (dorefresh < up && showtime)
-      {                         // If doing fast refreshes, update periodically
-         dorefresh = up + refresh;
+      int response = 0;
+      if (!recheck || now / recheck != check || !imagetime)
+      {                         // Periodic image check
+         if (recheck)
+            check = now / recheck;
+         response = getimage ();
+      }
+      // Do we do a full refresh?
+      if (refresh && now / refresh != fresh)
+      {                         // Periodic refresh, e.g. once a day
+         fresh = now / refresh;
          gfx_refresh ();
-      } else if (response == 200)
-         gfx_refresh ();
+      } else if (response == 200 && (!showtime || !image))
+         gfx_refresh ();        // New image but not doing the regular clock updates
       if (image)
          gfx_load (image);
       else
          gfx_clear (0);
       if (!image && response)
-      {
+      {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
          gfx_7seg (9, "%d", response);
          gfx_pos (0, 100, GFX_L | GFX_T);
@@ -458,7 +471,7 @@ app_main ()
          localtime_r (&now, &t);
          gfx_pos (gfx_width () / 2, gfx_height () - 1, GFX_C | GFX_B);
          if (showtime * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
-            gfx_7seg (showtime, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
+            gfx_7seg (showtime ? : 4, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
             gfx_7seg (showtime, "%02d:%02d", t.tm_hour, t.tm_min);
       }
