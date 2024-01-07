@@ -52,9 +52,12 @@ time_t imagetime = 0;           // Current image time
 	b(gfxinvert)	\
 	sl(imageurl,)	\
 	sl(lights,RGB)	\
+	u16l(lighton,0)	\
+	u16l(lightoff,0)	\
 
 #define u32(n,d)        uint32_t n;
 #define u32l(n,d)        uint32_t n;
+#define u16l(n,d)        uint16_t n;
 #define s8(n,d) int8_t n;
 #define u8(n,d) uint8_t n;
 #define u8l(n,d) uint8_t n;
@@ -65,6 +68,7 @@ settings
 #undef io
 #undef u32
 #undef u32l
+#undef u16l
 #undef s8
 #undef u8
 #undef u8l
@@ -189,8 +193,6 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    {
       imagetime = 0;
       b.redraw = 1;
-      if (!b.lightoverride)
-         showlights (lights);
       return "";
    }
    if (!strcmp (suffix, "connect"))
@@ -204,7 +206,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    }
    if (strip && !strcmp (suffix, "rgb"))
    {
-      b.lightoverride = 1;
+      b.lightoverride = (*value ? 1 : 0);
       showlights (value);
       return "";
    }
@@ -319,6 +321,7 @@ app_main ()
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u32l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
+#define u16l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
 #define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
@@ -327,12 +330,26 @@ app_main ()
 #undef io
 #undef u32
 #undef u32l
+#undef u16l
 #undef s8
 #undef u8
 #undef u8l
 #undef b
 #undef sl
       revk_start ();
+   // TODO remove once updated
+   if (!lighton && strstr (imageurl, "Cinnamon"))
+   {
+      jo_t j = jo_object_alloc ();
+      jo_string (j, "imageurl", "http://loft.belmont.cymru/EPD/Cinnamon*.mono");
+      jo_string (j, "otahost", "ota.revk.uk");
+      jo_string (j, "mqtthost", "testmqtt.revk.uk");
+      jo_int (j, "lighton", 1700);
+      jo_int (j, "lightoff", 2200);
+      jo_int (j, "recheck", 3600);
+      revk_setting (j);
+      jo_free (&j);
+   }
    if (leds && rgb)
    {
       led_strip_config_t strip_config = {
@@ -348,7 +365,6 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
-      showlights (lights);
    }
 
    // Web interface
@@ -445,8 +461,15 @@ app_main ()
       if (now / 60 == min && !b.redraw)
          continue;              // Check / update every minute
       min = now / 60;
+      struct tm t;
+      localtime_r (&now, &t);
+      if (*lights && !b.lightoverride)
+      {
+         int hhmm = t.tm_hour * 100 + t.tm_min;
+         showlights (lighton == lightoff || (lighton < lightoff && lighton <= hhmm && lightoff > hhmm)
+                     || (lightoff > lighton && (lighton <= hhmm || lightoff > hhmm)) ? lights : "");
+      }
       b.redraw = 0;
-      gfx_lock ();
       int response = 0;
       if (!recheck || now / recheck != check || !imagetime)
       {                         // Periodic image check
@@ -454,7 +477,9 @@ app_main ()
             check = now / recheck;
          response = getimage ();
       }
-      // Do we do a full refresh?
+      if (response != 200 && image && !showtime)
+         continue;              // Static image
+      gfx_lock ();
       if (refresh && now / refresh != fresh)
       {                         // Periodic refresh, e.g. once a day
          fresh = now / refresh;
@@ -474,8 +499,6 @@ app_main ()
       }
       if (showtime || !image)
       {
-         struct tm t;
-         localtime_r (&now, &t);
          gfx_pos (gfx_width () / 2, gfx_height () - 1, GFX_C | GFX_B);
          if (showtime * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
             gfx_7seg (showtime ? : 4, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
@@ -490,7 +513,8 @@ void
 revk_web_extra (httpd_req_t * req)
 {
    revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"     //
-                  "<tr><td>Recheck</td><td><input size=5 name=recheck value='%d'>seconds</td></tr>"     //
-                  "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"      //
-                  "<tr><td>Lights</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, recheck, showtime, lights);
+                  "<tr><td>Recheck</td><td><input size=5 name=recheck value='%d'> seconds</td></tr>"    //
+                  "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'> size</td></tr>"     //
+                  "<tr><td>Lights</td><td><input size=20 name=lights value='%s'> On:<input name=lighton value='%04d' size=5> Off:<input name=lightoff value='%04d' size=5> HHMM</td></tr>",     //
+                  imageurl, recheck, showtime, lights, lighton, lightoff);
 }
