@@ -18,6 +18,8 @@ It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT c
 |`recheck`|How often to recheck the image URL, this is done on the minute so multiples of `60` make sense|
 |`startup`|How many seconds to show wifi connect details at startup|
 |`lights`|Pattern of lighst to show by default|
+|`lighton`|When to turn on lights (HHMM)|
+|`lightoff`|When to turn off lights (HHMM)|
 
 ## Seasonal variations
 
