@@ -44,7 +44,6 @@ time_t imagetime = 0;           // Current image time
         io(gfxrst,41)   \
         io(gfxbusy,42)  \
         u8(gfxflip,6)   \
-	u8(holdtime,30)	\
 	u8(startup,10)	\
 	u8(leds,1)	\
 	u32(refresh,86400)	\
@@ -483,6 +482,7 @@ void
 revk_web_extra (httpd_req_t * req)
 {
    revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"     //
+                  "<tr><td>Recheck</td><td><input size=2 name=recheck value='%d'>seconds</td></tr>"      //
                   "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"      //
-                  "<tr><td>LEDs</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, showtime, lights);
+                  "<tr><td>Lights</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, recheck,showtime, lights);
 }

@@ -8,11 +8,16 @@ It can be compiled to work with a variety of panels as per [GFX library](https:/
 
 It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT commands and settings as per that library.
 
-It checks `imageurl` every minute, and if it has changed it updates the display.
+## Settings
 
-It can also overlay a date/time on the bottom of the display if `showtime` is set. This set to the size of the clock, up to 20.
-
-These settings can be set via the web interface *Settings* and apply live without a reboot..
+|Setting|Meaning|
+|-------|-------|
+|`imageurl`|The URL for the image to show (see below)|
+|`showtime`|How big to display a clock in centre bottom of display|
+|`refresh`|How often to fully refresh the display (if `showtime` is not set then this is every time the image changes)|
+|`recheck`|How often to recheck the image URL, this is done on the minute so multiples of `60` make sense|
+|`startup`|How many seconds to show wifi connect details at startup|
+|`lights`|Pattern of lighst to show by default|
 
 ## Seasonal variations
 
@@ -20,11 +25,11 @@ The `imageurl` is fetched with a query string when there is a seasonal message a
 
 |Character|Season|When|
 |---------|------|----|
-|`M`|Full Moon|±12 hours of full moon|
+|`M`|Full Moon|±12 hours of full moon (regardless of other seasonal codes)|
 |`Y`|New Year|1st-7th Jan|
 |`E`|Easter|Good Friday to Easter Monday|
 |`H`|Halloween|From 4pm on 31st Oct|
-|`X`|From 1st to 25th Dec|
+|`X`|Xmas|From 1st to 25th Dec|
 
 ## Image files
 
