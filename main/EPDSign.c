@@ -348,7 +348,7 @@ app_main ()
       jo_int (j, "lighton", 1700);
       jo_int (j, "lightoff", 2200);
       jo_int (j, "recheck", 3600);
-      jo_int (j, "startup", 3);
+      jo_int (j, "startup", 0);
       revk_setting (j);
       jo_free (&j);
    }
