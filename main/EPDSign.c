@@ -47,23 +47,27 @@ time_t imagetime = 0;           // Current image time
 	u8(startup,10)	\
 	u8(leds,1)	\
 	u32(refresh,86400)	\
-	u32(recheck,60)	\
+	u32l(recheck,60)	\
+	u8l(showtime,0)	\
 	b(gfxinvert)	\
-	u8(showtime,0)	\
 	sl(imageurl,)	\
 	sl(lights,RGB)	\
 
 #define u32(n,d)        uint32_t n;
+#define u32l(n,d)        uint32_t n;
 #define s8(n,d) int8_t n;
 #define u8(n,d) uint8_t n;
+#define u8l(n,d) uint8_t n;
 #define b(n) uint8_t n;
 #define sl(n,d) char * n;
 #define io(n,d)           uint16_t n;
 settings
 #undef io
 #undef u32
+#undef u32l
 #undef s8
 #undef u8
+#undef u8l
 #undef b
 #undef sl
    httpd_handle_t webserver = NULL;
@@ -314,14 +318,18 @@ app_main ()
 #define io(n,d)           revk_register(#n,0,sizeof(n),&n,"- "#d,SETTING_SET|SETTING_BITFIELD);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
 #define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define u32l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
 #define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
+#define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
 #define sl(n,d) revk_register(#n,0,0,&n,#d,SETTING_LIVE);
    settings
 #undef io
 #undef u32
+#undef u32l
 #undef s8
 #undef u8
+#undef u8l
 #undef b
 #undef sl
       revk_start ();
@@ -482,7 +490,7 @@ void
 revk_web_extra (httpd_req_t * req)
 {
    revk_web_send (req, "<tr><td>ImageURL</td><td><input size=80 name=imageurl value='%s'></td><td>"     //
-                  "<tr><td>Recheck</td><td><input size=2 name=recheck value='%d'>seconds</td></tr>"      //
+                  "<tr><td>Recheck</td><td><input size=5 name=recheck value='%d'>seconds</td></tr>"     //
                   "<tr><td>ShowTime</td><td><input size=2 name=showtime value='%d'>size</td></tr>"      //
-                  "<tr><td>Lights</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, recheck,showtime, lights);
+                  "<tr><td>Lights</td><td><input size=20 name=lights value='%s'></td></tr>", imageurl, recheck, showtime, lights);
 }
