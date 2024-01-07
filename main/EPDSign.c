@@ -337,21 +337,6 @@ app_main ()
 #undef b
 #undef sl
       revk_start ();
-   // TODO remove once updated
-   if (!lighton && strstr (imageurl, "Cinnamon"))
-   {
-      jo_t j = jo_object_alloc ();
-      jo_string (j, "imageurl", "http://loft.belmont.cymru/EPD/Cinnamon*.mono");
-      jo_string (j, "otahost", "ota.revk.uk");
-      jo_string (j, "mqtthost", "testmqtt.revk.uk");
-      jo_string (j, "hostname", "Clock");
-      jo_int (j, "lighton", 1700);
-      jo_int (j, "lightoff", 2200);
-      jo_int (j, "recheck", 3600);
-      jo_int (j, "startup", 0);
-      revk_setting (j);
-      jo_free (&j);
-   }
    if (leds && rgb)
    {
       led_strip_config_t strip_config = {
