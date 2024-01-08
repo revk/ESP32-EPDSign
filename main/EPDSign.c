@@ -214,7 +214,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
 }
 
 int
-getimage (void)
+getimage (char season)
 {
    if (!*imageurl || revk_link_down ())
       return 0;
@@ -222,11 +222,6 @@ getimage (void)
    int l = strlen (imageurl);
    char *url = mallocspi (l + 3);
    strcpy (url, imageurl);
-   char season = revk_season (now);
-#ifdef  CONFIG_REVK_LUNAR
-   if (now < revk_last_moon (now) + 12 * 3600 || now > revk_next_moon (now) - 12 * 3600)
-      season = 'M';
-#endif
    char *s = strrchr (url, '*');
    if (s)
    {
@@ -458,11 +453,24 @@ app_main ()
       }
       b.redraw = 0;
       int response = 0;
-      if (!recheck || now / recheck != check || !imagetime)
-      {                         // Periodic image check
-         if (recheck)
-            check = now / recheck;
-         response = getimage ();
+      {                         // Seasonal changes
+         static char lastseason = 0;
+         char season = revk_season (now);
+#ifdef  CONFIG_REVK_LUNAR
+         if (now < revk_last_moon (now) + 12 * 3600 || now > revk_next_moon (now) - 12 * 3600)
+            season = 'M';
+#endif
+         if (lastseason != season)
+         {                      // Change of image
+            lastseason = season;
+            imagetime = 0;
+         }
+         if (!recheck || now / recheck != check || !imagetime)
+         {                      // Periodic image check
+            if (recheck)
+               check = now / recheck;
+            response = getimage (season);
+         }
       }
       if (response != 200 && image && !showtime)
          continue;              // Static image
