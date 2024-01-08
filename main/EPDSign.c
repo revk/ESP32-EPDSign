@@ -459,8 +459,8 @@ app_main ()
 #ifdef  CONFIG_REVK_LUNAR
          if (now < revk_moon_full_last (now) + 12 * 3600 || now > revk_moon_full_next (now) - 12 * 3600)
             season = 'M';
-	  if (t < revk_moon_new (t) + 12 * 3600 && t > revk_moon_new (t) - 12 * 3600)
-      return 'N';
+         if (now < revk_moon_new (now) + 12 * 3600 && now > revk_moon_new (now) - 12 * 3600)
+            season = 'N';
 #endif
          if (lastseason != season)
          {                      // Change of image
