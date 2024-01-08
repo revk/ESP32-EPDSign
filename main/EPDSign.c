@@ -457,8 +457,10 @@ app_main ()
          static char lastseason = 0;
          char season = revk_season (now);
 #ifdef  CONFIG_REVK_LUNAR
-         if (now < revk_last_moon (now) + 12 * 3600 || now > revk_next_moon (now) - 12 * 3600)
+         if (now < revk_moon_full_last (now) + 12 * 3600 || now > revk_moon_full_next (now) - 12 * 3600)
             season = 'M';
+	  if (t < revk_moon_new (t) + 12 * 3600 && t > revk_moon_new (t) - 12 * 3600)
+      return 'N';
 #endif
          if (lastseason != season)
          {                      // Change of image
