@@ -35,17 +35,17 @@ time_t imagetime = 0;           // Current image time
 // Dynamic
 
 #define	settings		\
-	io(rgb,)	\
+	io(rgb,2)	\
 	io(gfxena,)	\
-        io(gfxmosi,37)  \
-        io(gfxsck,38)   \
-        io(gfxcs,39)    \
-        io(gfxdc,40)    \
-        io(gfxrst,41)   \
-        io(gfxbusy,42)  \
+        io(gfxmosi,40)  \
+        io(gfxsck,39)   \
+        io(gfxcs,38)    \
+        io(gfxdc,37)    \
+        io(gfxrst,36)   \
+        io(gfxbusy,25)  \
         u8(gfxflip,6)   \
 	u8(startup,10)	\
-	u8(leds,1)	\
+	u8(leds,25)	\
 	u32(refresh,86400)	\
 	u32l(recheck,60)	\
 	u8l(showtime,0)	\
@@ -347,6 +347,7 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+      showlights('b');
    }
 
    // Web interface
