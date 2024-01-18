@@ -347,7 +347,7 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
-      showlights('b');
+      showlights("b");
    }
 
    // Web interface
