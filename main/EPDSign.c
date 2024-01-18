@@ -42,7 +42,7 @@ time_t imagetime = 0;           // Current image time
         io(gfxcs,38)    \
         io(gfxdc,37)    \
         io(gfxrst,36)   \
-        io(gfxbusy,35)  \
+        io(gfxbusy,25)  \
         u8(gfxflip,6)   \
 	u8(startup,10)	\
 	u8(leds,25)	\
@@ -214,7 +214,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
 }
 
 int
-getimage (void)
+getimage (char season)
 {
    if (!*imageurl || revk_link_down ())
       return 0;
@@ -222,11 +222,6 @@ getimage (void)
    int l = strlen (imageurl);
    char *url = mallocspi (l + 3);
    strcpy (url, imageurl);
-   char season = revk_season (now);
-#ifdef  CONFIG_REVK_LUNAR
-   if (now < revk_last_moon (now) + 12 * 3600 || now > revk_next_moon (now) - 12 * 3600)
-      season = 'M';
-#endif
    char *s = strrchr (url, '*');
    if (s)
    {
@@ -337,21 +332,6 @@ app_main ()
 #undef b
 #undef sl
       revk_start ();
-   // TODO remove once updated
-   if (!lighton && strstr (imageurl, "Cinnamon"))
-   {
-      jo_t j = jo_object_alloc ();
-      jo_string (j, "imageurl", "http://loft.belmont.cymru/EPD/Cinnamon*.mono");
-      jo_string (j, "otahost", "ota.revk.uk");
-      jo_string (j, "mqtthost", "testmqtt.revk.uk");
-      jo_string (j, "hostname", "Clock");
-      jo_int (j, "lighton", 1700);
-      jo_int (j, "lightoff", 2200);
-      jo_int (j, "recheck", 3600);
-      jo_int (j, "startup", 3);
-      revk_setting (j);
-      jo_free (&j);
-   }
    if (leds && rgb)
    {
       led_strip_config_t strip_config = {
@@ -367,6 +347,7 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
+      showlights('b');
    }
 
    // Web interface
@@ -473,11 +454,26 @@ app_main ()
       }
       b.redraw = 0;
       int response = 0;
-      if (!recheck || now / recheck != check || !imagetime)
-      {                         // Periodic image check
-         if (recheck)
-            check = now / recheck;
-         response = getimage ();
+      {                         // Seasonal changes
+         static char lastseason = 0;
+         char season = revk_season (now);
+#ifdef  CONFIG_REVK_LUNAR
+         if (now < revk_moon_full_last (now) + 12 * 3600 || now > revk_moon_full_next (now) - 12 * 3600)
+            season = 'M';
+         if (now < revk_moon_new (now) + 12 * 3600 && now > revk_moon_new (now) - 12 * 3600)
+            season = 'N';
+#endif
+         if (lastseason != season)
+         {                      // Change of image
+            lastseason = season;
+            imagetime = 0;
+         }
+         if (!recheck || now / recheck != check || !imagetime)
+         {                      // Periodic image check
+            if (recheck)
+               check = now / recheck;
+            response = getimage (season);
+         }
       }
       if (response != 200 && image && !showtime)
          continue;              // Static image

@@ -28,6 +28,7 @@ The `imageurl` is fetched with a query string when there is a seasonal message a
 |Character|Season|When|
 |---------|------|----|
 |`M`|Full Moon|±12 hours of full moon (regardless of other seasonal codes)|
+|`N`|New Moon|±12 hours of new moon (regardless of other seasonal codes)|
 |`Y`|New Year|1st-7th Jan|
 |`E`|Easter|Good Friday to Easter Monday|
 |`H`|Halloween|From 4pm on 31st Oct|
