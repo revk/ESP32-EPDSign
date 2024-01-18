@@ -35,7 +35,7 @@ time_t imagetime = 0;           // Current image time
 // Dynamic
 
 #define	settings		\
-	io(rgb,34)	\
+	io(rgb,2)	\
 	io(gfxena,)	\
         io(gfxmosi,40)  \
         io(gfxsck,39)   \
@@ -45,7 +45,7 @@ time_t imagetime = 0;           // Current image time
         io(gfxbusy,35)  \
         u8(gfxflip,6)   \
 	u8(startup,10)	\
-	u8(leds,24)	\
+	u8(leds,25)	\
 	u32(refresh,86400)	\
 	u32l(recheck,60)	\
 	u8l(showtime,0)	\
