@@ -42,7 +42,7 @@ time_t imagetime = 0;           // Current image time
         io(gfxcs,38)    \
         io(gfxdc,37)    \
         io(gfxrst,36)   \
-        io(gfxbusy,25)  \
+        io(gfxbusy,35)  \
         u8(gfxflip,6)   \
 	u8(startup,10)	\
 	u8(leds,25)	\
