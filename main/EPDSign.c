@@ -17,9 +17,6 @@ static const char TAG[] = "EPDSign";
 #include <driver/gpio.h>
 
 #define BITFIELDS "-^"
-#define PORT_INV 0x4000
-#define PORT_PU 0x2000
-#define port_mask(p) ((p)&0xFF) // 16 bit
 
 static struct
 {                               // Flags
@@ -34,6 +31,12 @@ time_t imagetime = 0;           // Current image time
 
 // Dynamic
 #ifdef	CONFIG_REVK_OLD_SETTINGS
+struct gpio_s
+{
+        uint16_t num:14;
+        uint16_t inv:1;
+        uint16_t set:1;
+};
 #define	settings		\
 	io(rgb,2)	\
 	io(gfxena,)	\
@@ -63,7 +66,7 @@ time_t imagetime = 0;           // Current image time
 #define u8l(n,d) uint8_t n;
 #define b(n) uint8_t n;
 #define sl(n,d) char * n;
-#define io(n,d)           uint16_t n;
+#define io(n,d)           struct gpio_s n;
 settings
 #undef io
 #undef u32
@@ -336,14 +339,15 @@ app_main ()
 #undef sl
 #endif
       revk_start ();
-   if (leds && rgb)
+   ESP_LOGE(TAG,"rgb.set=%d rgb.inv=%d rgb.num=%d",rgb.set,rgb.inv,rgb.num);
+   if (leds && rgb.set)
    {
       led_strip_config_t strip_config = {
-         .strip_gpio_num = (port_mask (rgb)),
+         .strip_gpio_num = (rgb.num),
          .max_leds = leds,
          .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
          .led_model = LED_MODEL_WS2812, // LED strip model
-         .flags.invert_out = ((rgb & PORT_INV) ? 1 : 0),        // whether to invert the output signal (useful when your hardware has a level inverter)
+         .flags.invert_out = (rgb.inv ? 1 : 0),        // whether to invert the output signal (useful when your hardware has a level inverter)
       };
       led_strip_rmt_config_t rmt_config = {
          .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
@@ -363,14 +367,14 @@ app_main ()
       register_get_uri ("/apple-touch-icon.png", web_icon);
       revk_web_settings_add (webserver);
    }
-   if (gfxena)
+   if (gfxena.set)
    {
-      gpio_reset_pin (port_mask (gfxena));
-      gpio_set_direction (port_mask (gfxena), GPIO_MODE_OUTPUT);
-      gpio_set_level (port_mask (gfxena), gfxena & PORT_INV ? 0 : 1);   // Enable
+      gpio_reset_pin (gfxena.num);
+      gpio_set_direction (gfxena.num, GPIO_MODE_OUTPUT);
+      gpio_set_level (gfxena.num, gfxena.inv ? 0 : 1);   // Enable
    }
    {
-    const char *e = gfx_init (cs: port_mask (gfxcs), sck: port_mask (gfxsck), mosi: port_mask (gfxmosi), dc: port_mask (gfxdc), rst: port_mask (gfxrst), busy: port_mask (gfxbusy), flip: gfxflip, direct: 1, invert:gfxinvert);
+    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert);
       if (e)
       {
          ESP_LOGE (TAG, "gfx %s", e);

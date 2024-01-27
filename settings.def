@@ -1,0 +1,19 @@
+gpio	rgb		2
+gpio	gfx.ena
+gpio	gfx.mosi	40
+gpio	gfx.sck		39
+gpio	gfx.cs		38
+gpio	gfx.dc		37
+gpio	gfx.rst		36
+gpio	gfx.busy	35
+u8	gfx.flip	6
+bit	gfx.invert
+u8	startup		10
+u8	leds		25
+u32	refresh		86400
+u32	recheck		60	.live=1
+u8	showtime		.live=1
+s	image.url		.live=1
+s	lights		RGB	.live=1
+u16	light.on		.live=1
+u16	light.off		.live=1
