@@ -6,7 +6,7 @@
 PROJECT_NAME := EPDSign
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 
-all:	settings.h components/ESP32-RevK/revk_settings
+all:	settings.h
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
@@ -21,7 +21,7 @@ issue:
 	git commit -a -m release
 	git push
 
-settings.h:	settings.def components/ESP32-RevK/settings.def
+settings.h:	settings.def components/ESP32-RevK/settings.def components/ESP32-RevK/revk_settings
 	components/ESP32-RevK/revk_settings $^
 
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c
