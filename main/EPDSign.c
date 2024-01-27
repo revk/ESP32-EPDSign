@@ -339,7 +339,6 @@ app_main ()
 #undef sl
 #endif
       revk_start ();
-   ESP_LOGE(TAG,"rgb.set=%d rgb.inv=%d rgb.num=%d",rgb.set,rgb.inv,rgb.num);
    if (leds && rgb.set)
    {
       led_strip_config_t strip_config = {
