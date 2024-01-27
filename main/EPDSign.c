@@ -33,7 +33,7 @@ uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
 
 // Dynamic
-
+#ifdef	CONFIG_REVK_OLD_SETTINGS
 #define	settings		\
 	io(rgb,2)	\
 	io(gfxena,)	\
@@ -74,6 +74,8 @@ settings
 #undef u8l
 #undef b
 #undef sl
+#endif
+
    httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
@@ -311,6 +313,7 @@ void
 app_main ()
 {
    revk_boot (&app_callback);
+#ifdef	CONFIG_REVK_OLD_SETTINGS
    revk_register ("gfx", 0, sizeof (gfxcs), &gfxcs, "- ", SETTING_SET | SETTING_BITFIELD | SETTING_SECRET);     // Header
 #define io(n,d)           revk_register(#n,0,sizeof(n),&n,"- "#d,SETTING_SET|SETTING_BITFIELD);
 #define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
@@ -331,6 +334,7 @@ app_main ()
 #undef u8l
 #undef b
 #undef sl
+#endif
       revk_start ();
    if (leds && rgb)
    {
