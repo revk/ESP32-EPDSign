@@ -6,7 +6,7 @@
 PROJECT_NAME := EPDSign
 SUFFIX := $(shell components/ESP32-RevK/buildsuffix)
 
-all:	settings.h
+all:	settings.h components/ESP32-RevK/revk_settings
 	@echo Make: $(PROJECT_NAME)$(SUFFIX).bin
 	@idf.py build
 	@cp build/$(PROJECT_NAME).bin $(PROJECT_NAME)$(SUFFIX).bin
