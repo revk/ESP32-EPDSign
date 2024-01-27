@@ -16,3 +16,4 @@ images/*.mono
 *-backups/
 settings.h
 settings.c
+*.pem
