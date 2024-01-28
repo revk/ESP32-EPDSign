@@ -33,9 +33,9 @@ time_t imagetime = 0;           // Current image time
 #ifdef	CONFIG_REVK_OLD_SETTINGS
 struct gpio_s
 {
-        uint16_t num:14;
-        uint16_t inv:1;
-        uint16_t set:1;
+   uint16_t num:14;
+   uint16_t inv:1;
+   uint16_t set:1;
 };
 #define	settings		\
 	io(rgb,2)	\
@@ -78,7 +78,6 @@ settings
 #undef b
 #undef sl
 #endif
-
    httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
@@ -340,15 +339,12 @@ app_main ()
 #endif
       revk_start ();
 
-   ESP_LOGE(TAG,"test0=%X",test0);
-   ESP_LOGE(TAG,"test1=%X",test1);
-   ESP_LOGE(TAG,"test2=%X",test2);
-   ESP_LOGE(TAG,"test3=%lX",test3);
-   ESP_LOGE(TAG,"test4=%llX",test4);
-   ESP_LOGE(TAG,"test5=%X",test5);
-   ESP_LOGE(TAG,"test6=%X",test6);
-   ESP_LOGE(TAG,"test7=%lX",test7);
-   ESP_LOGE(TAG,"test8=%llX",test8);
+   ESP_LOGE (TAG, "test0=%d", test0);
+   ESP_LOGE (TAG, "test1=%d", test1);
+   ESP_LOGE (TAG, "test2=%d", test2);
+   ESP_LOGE (TAG, "test3=%d", test3);
+   ESP_LOGE (TAG, "gfxbusy.set=%d .num=%d .invert=%d", gfxbusy.set, gfxbusy.num, gfxbusy.invert);
+   ESP_LOGE(TAG,"lights=%s",lights);
 
    if (leds && rgb.set)
    {
@@ -365,9 +361,8 @@ app_main ()
          .flags.with_dma = true,
       };
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
-      showlights("b");
+      showlights ("b");
    }
-
    // Web interface
    httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
    config.max_uri_handlers = 5 + revk_num_web_handlers ();
@@ -381,7 +376,7 @@ app_main ()
    {
       gpio_reset_pin (gfxena.num);
       gpio_set_direction (gfxena.num, GPIO_MODE_OUTPUT);
-      gpio_set_level (gfxena.num, gfxena.invert);   // Enable
+      gpio_set_level (gfxena.num, gfxena.invert);       // Enable
    }
    {
     const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert);

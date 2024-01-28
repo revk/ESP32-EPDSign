@@ -1,9 +1,4 @@
 bit	test.0
-u8	test.1
-u16	test.2
-u32	test.3
-u64	test.4
-s8	test.5
-s16	test.6
-s32	test.7
-s64	test.8
+bit	test.1	1
+bit 	test.2
+bit	test.3	1
