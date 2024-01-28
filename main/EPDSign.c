@@ -339,6 +339,17 @@ app_main ()
 #undef sl
 #endif
       revk_start ();
+
+   ESP_LOGE(TAG,"test0=%X",test0);
+   ESP_LOGE(TAG,"test1=%X",test1);
+   ESP_LOGE(TAG,"test2=%X",test2);
+   ESP_LOGE(TAG,"test3=%lX",test3);
+   ESP_LOGE(TAG,"test4=%llX",test4);
+   ESP_LOGE(TAG,"test5=%X",test5);
+   ESP_LOGE(TAG,"test6=%X",test6);
+   ESP_LOGE(TAG,"test7=%lX",test7);
+   ESP_LOGE(TAG,"test8=%llX",test8);
+
    if (leds && rgb.set)
    {
       led_strip_config_t strip_config = {
@@ -346,7 +357,7 @@ app_main ()
          .max_leds = leds,
          .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
          .led_model = LED_MODEL_WS2812, // LED strip model
-         .flags.invert_out = (rgb.inv ? 1 : 0),        // whether to invert the output signal (useful when your hardware has a level inverter)
+         .flags.invert_out = rgb.invert,        // whether to invert the output signal (useful when your hardware has a level inverter)
       };
       led_strip_rmt_config_t rmt_config = {
          .clk_src = RMT_CLK_SRC_DEFAULT,        // different clock source can lead to different power consumption
@@ -370,7 +381,7 @@ app_main ()
    {
       gpio_reset_pin (gfxena.num);
       gpio_set_direction (gfxena.num, GPIO_MODE_OUTPUT);
-      gpio_set_level (gfxena.num, gfxena.inv ? 0 : 1);   // Enable
+      gpio_set_level (gfxena.num, gfxena.invert);   // Enable
    }
    {
     const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert);
