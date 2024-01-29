@@ -343,7 +343,7 @@ app_main ()
    ESP_LOGE (TAG, "test.u32=%ld", testu32);
    ESP_LOGE (TAG, "test.s8=%d", tests8);
    ESP_LOGE (TAG, "test.s=%s", tests);
-   ESP_LOGE (TAG, "test.gpio.set=%d .num=%d .invert=%d", testgpio.set, testgpio.num, testgpio.invert);
+   ESP_LOGE (TAG, "test.gpio.set=%d .num=%d .invert=%d .pulldown=%d .nopull=%d", testgpio.set, testgpio.num, testgpio.invert,testgpio.pulldown,testgpio.nopull);
    ESP_LOGE(TAG,"lights=%s",lights);
    ESP_LOGE(TAG,"blink=%d %d %d",blink[0].num,blink[1].num,blink[2].num);
 
