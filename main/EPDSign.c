@@ -29,56 +29,7 @@ volatile uint32_t override = 0;
 uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
 
-// Dynamic
-#ifdef	CONFIG_REVK_OLD_SETTINGS
-struct gpio_s
-{
-   uint16_t num:14;
-   uint16_t inv:1;
-   uint16_t set:1;
-};
-#define	settings		\
-	io(rgb,2)	\
-	io(gfxena,)	\
-        io(gfxmosi,40)  \
-        io(gfxsck,39)   \
-        io(gfxcs,38)    \
-        io(gfxdc,37)    \
-        io(gfxrst,36)   \
-        io(gfxbusy,35)  \
-        u8(gfxflip,6)   \
-	u8(startup,10)	\
-	u8(leds,25)	\
-	u32(refresh,86400)	\
-	u32l(recheck,60)	\
-	u8l(showtime,0)	\
-	b(gfxinvert)	\
-	sl(imageurl,)	\
-	sl(lights,RGB)	\
-	u16l(lighton,0)	\
-	u16l(lightoff,0)	\
-
-#define u32(n,d)        uint32_t n;
-#define u32l(n,d)        uint32_t n;
-#define u16l(n,d)        uint16_t n;
-#define s8(n,d) int8_t n;
-#define u8(n,d) uint8_t n;
-#define u8l(n,d) uint8_t n;
-#define b(n) uint8_t n;
-#define sl(n,d) char * n;
-#define io(n,d)           struct gpio_s n;
-settings
-#undef io
-#undef u32
-#undef u32l
-#undef u16l
-#undef s8
-#undef u8
-#undef u8l
-#undef b
-#undef sl
-#endif
-   httpd_handle_t webserver = NULL;
+httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
 
 static void
@@ -315,29 +266,7 @@ void
 app_main ()
 {
    revk_boot (&app_callback);
-#ifdef	CONFIG_REVK_OLD_SETTINGS
-   revk_register ("gfx", 0, sizeof (gfxcs), &gfxcs, "- ", SETTING_SET | SETTING_BITFIELD | SETTING_SECRET);     // Header
-#define io(n,d)           revk_register(#n,0,sizeof(n),&n,"- "#d,SETTING_SET|SETTING_BITFIELD);
-#define b(n) revk_register(#n,0,sizeof(n),&n,NULL,SETTING_BOOLEAN);
-#define u32(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u32l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
-#define u16l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
-#define s8(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_SIGNED);
-#define u8(n,d) revk_register(#n,0,sizeof(n),&n,#d,0);
-#define u8l(n,d) revk_register(#n,0,sizeof(n),&n,#d,SETTING_LIVE);
-#define sl(n,d) revk_register(#n,0,0,&n,#d,SETTING_LIVE);
-   settings
-#undef io
-#undef u32
-#undef u32l
-#undef u16l
-#undef s8
-#undef u8
-#undef u8l
-#undef b
-#undef sl
-#endif
-      revk_start ();
+   revk_start ();
 
    if (leds && rgb.set)
    {
@@ -465,7 +394,7 @@ app_main ()
          const char *seasons = revk_season (now);
          char season = 0;
          if (seasons && *seasons)
-         { // Cycle per hour when multiple
+         {                      // Cycle per hour when multiple
             int l = strlen (seasons);
             l = (t.tm_hour % l);
             season = seasons[l];
