@@ -1,4 +1,8 @@
-bit	test.0
-bit	test.1	1 .live=1
-bit 	test.2
-bit	test.3	1
+bit	test.bit	1
+s	test.s		TEST
+c10	test.c10	TEST
+o6	test.o6		112233005566	.hex=1
+u32	test.u32	123456
+s8	test.s8		-128
+gpio	test.gpio	-5
+blob	test.blob	aaaaaaaaa	.base64=1

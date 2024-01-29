@@ -339,12 +339,13 @@ app_main ()
 #endif
       revk_start ();
 
-   ESP_LOGE (TAG, "test0=%d", test0);
-   ESP_LOGE (TAG, "test1=%d", test1);
-   ESP_LOGE (TAG, "test2=%d", test2);
-   ESP_LOGE (TAG, "test3=%d", test3);
-   ESP_LOGE (TAG, "gfxbusy.set=%d .num=%d .invert=%d", gfxbusy.set, gfxbusy.num, gfxbusy.invert);
+   ESP_LOGE (TAG, "test.bit=%d", testbit);
+   ESP_LOGE (TAG, "test.u32=%ld", testu32);
+   ESP_LOGE (TAG, "test.s8=%d", tests8);
+   ESP_LOGE (TAG, "test.s=%s", tests);
+   ESP_LOGE (TAG, "test.gpio.set=%d .num=%d .invert=%d", testgpio.set, testgpio.num, testgpio.invert);
    ESP_LOGE(TAG,"lights=%s",lights);
+   ESP_LOGE(TAG,"blink=%d %d %d",blink[0].num,blink[1].num,blink[2].num);
 
    if (leds && rgb.set)
    {
