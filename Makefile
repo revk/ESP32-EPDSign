@@ -21,7 +21,7 @@ issue:
 	git commit -a -m release
 	git push
 
-settings.h:	components/ESP32-RevK/revk_settings settings.def components/ESP32-RevK/settings.def test.def
+settings.h:	components/ESP32-RevK/revk_settings settings.def components/ESP32-RevK/settings.def
 	components/ESP32-RevK/revk_settings $^
 
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c

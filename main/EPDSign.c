@@ -339,14 +339,6 @@ app_main ()
 #endif
       revk_start ();
 
-   ESP_LOGE (TAG, "test.bit=%d", testbit);
-   ESP_LOGE (TAG, "test.u32=%ld", testu32);
-   ESP_LOGE (TAG, "test.s8=%d", tests8);
-   ESP_LOGE (TAG, "test.s=%s", tests);
-   ESP_LOGE (TAG, "test.gpio.set=%d .num=%d .invert=%d .pulldown=%d .nopull=%d", testgpio.set, testgpio.num, testgpio.invert,testgpio.pulldown,testgpio.nopull);
-   ESP_LOGE(TAG,"lights=%s",lights);
-   ESP_LOGE(TAG,"blink=%d %d %d",blink[0].num,blink[1].num,blink[2].num);
-
    if (leds && rgb.set)
    {
       led_strip_config_t strip_config = {
@@ -470,13 +462,14 @@ app_main ()
       int response = 0;
       {                         // Seasonal changes
          static char lastseason = 0;
-         char season = revk_season (now);
-#ifdef  CONFIG_REVK_LUNAR
-         if (now < revk_moon_full_last (now) + 12 * 3600 || now > revk_moon_full_next (now) - 12 * 3600)
-            season = 'M';
-         if (now < revk_moon_new (now) + 12 * 3600 && now > revk_moon_new (now) - 12 * 3600)
-            season = 'N';
-#endif
+         const char *seasons = revk_season (now);
+         char season = 0;
+         if (seasons && *seasons)
+         { // Cycle per hour when multiple
+            int l = strlen (seasons);
+            l = (t.tm_hour % l);
+            season = seasons[l];
+         }
          if (lastseason != season)
          {                      // Change of image
             lastseason = season;
