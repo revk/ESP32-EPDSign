@@ -17,3 +17,5 @@ s	image.url		.live=1
 s	lights		RGB	.live=1
 u16	light.on		.live=1
 u16	light.off		.live=1
+gpio	input.gpio		.live=1 .array=10
+u32	input.timeout		.live=1 .array=10

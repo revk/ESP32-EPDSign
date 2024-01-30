@@ -267,6 +267,7 @@ app_main ()
 {
    revk_boot (&app_callback);
    revk_start ();
+   ESP_LOGE(TAG,"input.gpio0=%d input.gpio1=%d input.timeout0=%ld input.timeout1=%ld",inputgpio[0].num,inputgpio[1].num,inputtimeout[0],inputtimeout[1]);
 
    if (leds && rgb.set)
    {
