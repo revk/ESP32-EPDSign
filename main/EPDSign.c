@@ -267,7 +267,6 @@ app_main ()
 {
    revk_boot (&app_callback);
    revk_start ();
-   ESP_LOGE(TAG,"input.gpio0=%d input.gpio1=%d input.timeout0=%ld input.timeout1=%ld",inputgpio[0].num,inputgpio[1].num,inputtimeout[0],inputtimeout[1]);
 
    if (leds && rgb.set)
    {
@@ -392,14 +391,7 @@ app_main ()
       int response = 0;
       {                         // Seasonal changes
          static char lastseason = 0;
-         const char *seasons = revk_season (now);
-         char season = 0;
-         if (seasons && *seasons)
-         {                      // Cycle per hour when multiple
-            int l = strlen (seasons);
-            l = (t.tm_hour % l);
-            season = seasons[l];
-         }
+         const char season = *revk_season (now);
          if (lastseason != season)
          {                      // Change of image
             lastseason = season;
