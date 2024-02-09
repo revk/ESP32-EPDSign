@@ -18,7 +18,6 @@ beta:
 	-git commit -a -m checkpoint
 	@make set
 	cp $(PROJECT_NAME)*.bin betarelease
-	cp $(PROJECT_NAME)*.bin release
 	git commit -a -m beta
 	git push
 
@@ -27,6 +26,7 @@ issue:
 	-git submodule update --recursive
 	-git commit -a -m checkpoint
 	@make set
+	cp $(PROJECT_NAME)*.bin betarelease
 	cp $(PROJECT_NAME)*.bin release
 	git commit -a -m release
 	git push
