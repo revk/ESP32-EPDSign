@@ -439,5 +439,11 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-	revk_web_settings(req,"Image Base URL","imageurl");
+	revk_web_setting(req,"Image Base URL","imageurl");
+	revk_web_setting(req,"Image check","recheck");
+	revk_web_setting(req,"Clock size","showtime");
+	revk_web_setting(req,"Light pattern","lights");
+	revk_web_setting(req,"Light on","lighton");
+	revk_web_setting(req,"Light off","lightoff");
+	revk_web_setting(req,"Image invert","gfxinvert");
 }
