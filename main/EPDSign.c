@@ -29,57 +29,7 @@ volatile uint32_t override = 0;
 uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
 
-httpd_handle_t webserver = NULL;
 led_strip_handle_t strip = NULL;
-
-static void
-web_head (httpd_req_t * req, const char *title)
-{
-   revk_web_head (req, title);
-   revk_web_send (req, "<style>"        //
-                  "body{font-family:sans-serif;background:#8cf;}"       //
-                  "</style><body><h1>%s</h1>", title ? : "");
-}
-
-static esp_err_t
-web_icon (httpd_req_t * req)
-{                               // serve image -  maybe make more generic file serve
-   extern const char start[] asm ("_binary_apple_touch_icon_png_start");
-   extern const char end[] asm ("_binary_apple_touch_icon_png_end");
-   httpd_resp_set_type (req, "image/png");
-   httpd_resp_send (req, start, end - start);
-   return ESP_OK;
-}
-
-static esp_err_t
-web_root (httpd_req_t * req)
-{
-   if (revk_link_down ())
-      return revk_web_settings (req);   // Direct to web set up
-   web_head (req, *hostname ? hostname : appname);
-   return revk_web_foot (req, 0, 1, NULL);
-}
-
-static void
-register_uri (const httpd_uri_t * uri_struct)
-{
-   esp_err_t res = httpd_register_uri_handler (webserver, uri_struct);
-   if (res != ESP_OK)
-   {
-      ESP_LOGE (TAG, "Failed to register %s, error code %d", uri_struct->uri, res);
-   }
-}
-
-static void
-register_get_uri (const char *uri, esp_err_t (*handler) (httpd_req_t * r))
-{
-   httpd_uri_t uri_struct = {
-      .uri = uri,
-      .method = HTTP_GET,
-      .handler = handler,
-   };
-   register_uri (&uri_struct);
-}
 
 const char *
 gfx_qr (const char *value, int s)
@@ -285,15 +235,6 @@ app_main ()
       REVK_ERR_CHECK (led_strip_new_rmt_device (&strip_config, &rmt_config, &strip));
       showlights ("b");
    }
-   // Web interface
-   httpd_config_t config = HTTPD_DEFAULT_CONFIG ();
-   config.max_uri_handlers = 5 + revk_num_web_handlers ();
-   if (!httpd_start (&webserver, &config))
-   {
-      register_get_uri ("/", web_root);
-      register_get_uri ("/apple-touch-icon.png", web_icon);
-      revk_web_settings_add (webserver);
-   }
    if (gfxena.set)
    {
       gpio_reset_pin (gfxena.num);
@@ -411,7 +352,7 @@ app_main ()
       {                         // Periodic refresh, e.g. once a day
          fresh = now / refresh;
          gfx_refresh ();
-      } else if (response == 200 && (!showtime || !image))
+      } else if (response == 200 && !showtime)
          gfx_refresh ();        // New image but not doing the regular clock updates
       if (image)
          gfx_load (image);
@@ -432,6 +373,12 @@ app_main ()
          else
             gfx_7seg (showtime, "%02d:%02d", t.tm_hour, t.tm_min);
       }
+      if (showday)
+      {
+         gfx_pos (gfx_width () / 2, gfx_height () - 1 - showtime * 10, GFX_C | GFX_B);
+         const char *const longday[] = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
+         gfx_text (showday, longday[t.tm_wday]);
+      }
       gfx_unlock ();
    }
 }
@@ -439,11 +386,12 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-	revk_web_setting(req,"Image Base URL","imageurl");
-	revk_web_setting(req,"Image check","recheck");
-	revk_web_setting(req,"Clock size","showtime");
-	revk_web_setting(req,"Light pattern","lights");
-	revk_web_setting(req,"Light on","lighton");
-	revk_web_setting(req,"Light off","lightoff");
-	revk_web_setting(req,"Image invert","gfxinvert");
+   revk_web_setting (req, "Image Base URL", "imageurl");
+   revk_web_setting (req, "Image check", "recheck");
+   revk_web_setting (req, "Clock size", "showtime");
+   revk_web_setting (req, "Day size", "showday");
+   revk_web_setting (req, "Light pattern", "lights");
+   revk_web_setting (req, "Light on", "lighton");
+   revk_web_setting (req, "Light off", "lightoff");
+   revk_web_setting (req, "Image invert", "gfxinvert");
 }
