@@ -375,7 +375,7 @@ app_main ()
          else
             gfx_7seg (s, "%02d:%02d", t.tm_hour, t.tm_min);
       }
-      if (showday || !image)
+      if (showday)
       {
          int s = (showday & 0x3F) ? : 4;
          gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2,
