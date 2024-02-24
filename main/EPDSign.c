@@ -370,18 +370,19 @@ app_main ()
          int s = (showtime & 0x3F) ? : 4;
          gfx_pos ((showtime & 0x80) ? 0 : (showtime & 0x40) ? gfx_width () - 1 : gfx_width () / 2, gfx_height () - 1,
                   (showtime & 0x80 ? GFX_L : 0) | (showtime & 0x40 ? GFX_R : 0) | (showtime & 0xC0 ? 0 : GFX_C) | GFX_B);
-         if (showtime * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
-            gfx_7seg (showtime ? : 4, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
+         if (s * (6 * 15 + 1) <= gfx_width ())  // Datetime fits
+            gfx_7seg (s, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
-            gfx_7seg (showtime, "%02d:%02d", t.tm_hour, t.tm_min);
+            gfx_7seg (s, "%02d:%02d", t.tm_hour, t.tm_min);
       }
-      if (showday)
+      if (showday || !image)
       {
          int s = (showday & 0x3F) ? : 4;
-         gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2, gfx_height () - 1 - showday * 10,
+         gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2,
+                  gfx_height () - 1 - (showtime & 0x3F) * 10,
                   (showday & 0x80 ? GFX_L : 0) | (showday & 0x40 ? GFX_R : 0) | (showday & 0xC0 ? 0 : GFX_C) | GFX_B);
          const char *const longday[] = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
-         gfx_text (showday, longday[t.tm_wday]);
+         gfx_text (s, longday[t.tm_wday]);
       }
       gfx_unlock ();
    }
