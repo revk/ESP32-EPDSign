@@ -12,7 +12,7 @@ u8	startup		10				// Start up message (seconds)
 u8	leds		25				// Number of LEDs
 u32	refresh		86400				// Full refresh time (seconds)
 u32	recheck		60	.live=1			// Live check time (seconds)
-u8	fast		4	.live=1			// Use fast updates even for major image change
+u8	fast		3	.live=1			// Use fast updates even for major image change
 u8	showtime		.live=1	.flags="< >"	// Show clock (size)
 u8	showday			.live=1	.flags="< >"	// Show day (size)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
