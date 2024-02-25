@@ -16,8 +16,8 @@ It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT c
 |`showtime`|How big to display a clock in centre bottom of display|
 |`refresh`|How often to fully refresh the display (if `showtime` is not set then this is every time the image changes)|
 |`recheck`|How often to recheck the image URL, this is done on the minute so multiples of `60` make sense|
-|`startup`|How many seconds to show wifi connect details at startup|
-|`lights`|Pattern of lighst to show by default|
+|`startup`|How many seconds to show WiFi connect details at startup|
+|`lights`|Pattern of lights to show by default|
 |`lighton`|When to turn on lights (HHMM)|
 |`lightoff`|When to turn off lights (HHMM)|
 
@@ -51,6 +51,8 @@ That example rotates the image, which is obviously only necessary of the display
 The use of `--depth 1` and `GRAY:` may seem odd, why not `--mono`, but the reason is that the bit order is different. Doing it this way matches the display (bit 7 left, bit 0 right).
 
 ImageMagick can convert a wide variety of file formats.
+
+Another good trick is serving an actual web page, using `wkhtmltoimage`, e.g. `wkhtmltoimage -q --width 800 --crop-h 480 "YOUR_URL" - | convert -dither None -monochrome -depth 1 - GRAY:image.mono`
 
 ### White/Black/Red
 
