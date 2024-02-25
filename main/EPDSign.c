@@ -149,7 +149,7 @@ getimage (char season)
    esp_http_client_config_t config = {
       .url = url,
       .crt_bundle_attach = esp_crt_bundle_attach,
-      .timeout_ms = 10000,
+      .timeout_ms = 20000,
    };
    esp_http_client_handle_t client = esp_http_client_init (&config);
    int response = 0;
