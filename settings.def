@@ -19,3 +19,11 @@ s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	lights		RGB	.live=1			// LEDs pattern
 u16	light.on		.live=1	.place="HHMM"	// Lights on time (HHMM)
 u16	light.off		.live=1	.place="HHMM"	// Lights off time (HHMM)
+
+gpio	sd.ss		3				// MicroSD SS
+gpio	sd.mosi		4				// MicroSD MOSI
+gpio	sd.sck		5				// MicroSD SCK
+gpio	sd.miso		6				// MicroSD MISO
+gpio	sd.cd		-7				// MicroSD CD
+
+gpio	relay		8				// Relay output

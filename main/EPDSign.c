@@ -11,12 +11,15 @@ static const char TAG[] = "EPDSign";
 #include "esp_http_client.h"
 #include "esp_http_server.h"
 #include "esp_crt_bundle.h"
+#include "esp_vfs_fat.h"
 #include "gfx.h"
 #include "iec18004.h"
 #include <hal/spi_types.h>
 #include <driver/gpio.h>
 
 #define BITFIELDS "-^"
+
+const char sd_mount[] = "/sd";
 
 static struct
 {                               // Flags
@@ -30,6 +33,7 @@ uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
 
 led_strip_handle_t strip = NULL;
+sdmmc_card_t *card = NULL;
 
 const char *
 gfx_qr (const char *value, int s)
@@ -105,6 +109,15 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    {
       return "";
    }
+   if (!strcmp (suffix, "shutdown"))
+   {
+      if (card)
+      {
+         esp_vfs_fat_sdcard_unmount (sd_mount, card);
+         card = NULL;
+      }
+      return "";
+   }
    if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6"))
    {
       b.wificonnect = 1;
@@ -122,7 +135,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
 int
 getimage (char season)
 {
-   if (!*imageurl || revk_link_down ())
+   if (!*imageurl)
       return 0;
    time_t now = time (0);
    int l = strlen (imageurl);
@@ -151,31 +164,34 @@ getimage (char season)
       .crt_bundle_attach = esp_crt_bundle_attach,
       .timeout_ms = 20000,
    };
-   esp_http_client_handle_t client = esp_http_client_init (&config);
-   int response = 0;
-   if (client)
+   int response = -1;
+   if (!revk_link_down ())
    {
-      if (imagetime)
+      esp_http_client_handle_t client = esp_http_client_init (&config);
+      if (client)
       {
-         char when[50];
-         struct tm t;
-         gmtime_r (&imagetime, &t);
-         strftime (when, sizeof (when), "%a, %d %b %Y %T GMT", &t);
-         esp_http_client_set_header (client, "If-Modified-Since", when);
-      }
-      if (!esp_http_client_open (client, 0))
-      {
-         len = esp_http_client_fetch_headers (client);
-         if (len == size)
+         if (imagetime)
          {
-            buf = mallocspi (size);
-            if (buf)
-               len = esp_http_client_read_response (client, (char *) buf, size);
+            char when[50];
+            struct tm t;
+            gmtime_r (&imagetime, &t);
+            strftime (when, sizeof (when), "%a, %d %b %Y %T GMT", &t);
+            esp_http_client_set_header (client, "If-Modified-Since", when);
          }
-         response = esp_http_client_get_status_code (client);
-         esp_http_client_close (client);
+         if (!esp_http_client_open (client, 0))
+         {
+            len = esp_http_client_fetch_headers (client);
+            if (len == size)
+            {
+               buf = mallocspi (size);
+               if (buf)
+                  len = esp_http_client_read_response (client, (char *) buf, size);
+            }
+            response = esp_http_client_get_status_code (client);
+            esp_http_client_close (client);
+         }
+         esp_http_client_cleanup (client);
       }
-      esp_http_client_cleanup (client);
    }
    ESP_LOGD (TAG, "Get %s %d", url, response);
    if (response != 304)
@@ -205,9 +221,61 @@ getimage (char season)
          free (image);
          image = buf;
          imagetime = now;
+         buf = NULL;
+      }
+   }
+   if (card)
+   {                            // SD
+      char *s = strrchr (url, '/');
+      if (s)
+      {
+         char *fn = NULL;
+         asprintf (&fn, "%s%s", sd_mount, s);
+         if (image && response == 200)
+         {                      // Save to card
+            FILE *f = fopen (fn, "w");
+            if (f)
+            {
+               jo_t j = jo_object_alloc ();
+               if (fwrite (image, size, 1, f) != 1)
+                  jo_string (j, "error", "write failed");
+               fclose (f);
+               jo_string (j, "write", fn);
+               revk_info ("SD", &j);
+            }
+         } else if (!image || (response && response != 304))
+         {                      // Load from card
+            FILE *f = fopen (fn, "r");
+            if (f)
+            {
+               if (!buf)
+                  buf = mallocspi (size);
+               if (buf)
+               {
+                  if (fread (buf, size, 1, f) == 1)
+                  {
+                     if (image && !memcmp (buf, image, size))
+                        response = 0;   // No change
+                     else
+                     {
+                        jo_t j = jo_object_alloc ();
+                        jo_string (j, "read", fn);
+                        revk_info ("SD", &j);
+                        response = 200; // Treat as received
+                     }
+                     free (image);
+                     image = buf;
+                     buf = NULL;
+                  }
+               }
+               fclose (f);
+            }
+         }
+         free (fn);
       }
    }
    free (url);
+   free (buf);
    return response;
 }
 
@@ -256,6 +324,52 @@ app_main ()
          jo_string (j, "error", "Failed to start");
          jo_string (j, "description", e);
          revk_error ("gfx", &j);
+      }
+   }
+   if (sdmosi.set)
+   {
+      revk_gpio_input (sdcd);
+      sdmmc_host_t host = SDSPI_HOST_DEFAULT ();
+      host.max_freq_khz = SDMMC_FREQ_PROBING;
+      spi_bus_config_t bus_cfg = {
+         .mosi_io_num = sdmosi.num,
+         .miso_io_num = sdmiso.num,
+         .sclk_io_num = sdsck.num,
+         .quadwp_io_num = -1,
+         .quadhd_io_num = -1,
+         .max_transfer_sz = 4000,
+      };
+      esp_err_t ret = spi_bus_initialize (host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
+      if (ret != ESP_OK)
+      {
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "SPI failed");
+         jo_int (j, "code", ret);
+         jo_int (j, "MOSI", sdmosi.num);
+         jo_int (j, "MISO", sdmiso.num);
+         jo_int (j, "CLK", sdsck.num);
+         revk_error ("SD", &j);
+         vTaskDelete (NULL);
+         return;
+      }
+      esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+         .format_if_mount_failed = 1,
+         .max_files = 2,
+         .allocation_unit_size = 16 * 1024,
+         .disk_status_check_enable = 1,
+      };
+      sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT ();
+      slot_config.gpio_cs = sdss.num;
+      slot_config.host_id = host.slot;
+      ret = esp_vfs_fat_sdspi_mount (sd_mount, &host, &slot_config, &mount_config, &card);
+      if (ret)
+      {
+         ESP_LOGE (TAG, "SD %d", ret);
+         jo_t j = jo_object_alloc ();
+         jo_string (j, "error", "Failed to mount");
+         jo_int (j, "code", ret);
+         revk_error ("SD", &j);
+         card = NULL;
       }
    }
    gfx_lock ();
