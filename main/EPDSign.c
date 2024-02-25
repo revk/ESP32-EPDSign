@@ -144,11 +144,12 @@ getimage (char season)
    }
    ESP_LOGD (TAG, "Get %s", url);
    const int size = gfx_width () * gfx_height () / 8;
-   int len = 0;
+   int32_t len = 0;
    uint8_t *buf = NULL;
    esp_http_client_config_t config = {
       .url = url,
       .crt_bundle_attach = esp_crt_bundle_attach,
+      .timeout_ms = 10000,
    };
    esp_http_client_handle_t client = esp_http_client_init (&config);
    int response = 0;
@@ -164,7 +165,8 @@ getimage (char season)
       }
       if (!esp_http_client_open (client, 0))
       {
-         if (esp_http_client_fetch_headers (client) == size)
+         len = esp_http_client_fetch_headers (client);
+         if (len == size)
          {
             buf = mallocspi (size);
             if (buf)
@@ -181,9 +183,11 @@ getimage (char season)
       {
          jo_t j = jo_object_alloc ();
          jo_string (j, "url", url);
-         if (response)
+         if (response && response != -1)
             jo_int (j, "response", response);
-         if (len)
+         if (len == -ESP_ERR_HTTP_EAGAIN)
+            jo_string (j, "error", "timeout");
+         else if (len)
          {
             jo_int (j, "len", len);
             if (len != size)
@@ -191,10 +195,10 @@ getimage (char season)
          }
          revk_error ("image", &j);
       }
-      if (len == size)
+      if (len == size && buf)
       {
          if (gfxinvert)
-            for (int i = 0; i < size; i++)
+            for (int32_t i = 0; i < size; i++)
                buf[i] ^= 0xFF;
          if (image && !memcmp (buf, image, size))
             response = 0;       // No change
@@ -348,7 +352,7 @@ app_main ()
             response = getimage (season);
          }
       }
-      if (response != 200 && image && !showtime && !reshow)
+      if (response != 200 && image && !showtime && !fast)
          continue;
       // Static image
       gfx_lock ();
@@ -374,7 +378,7 @@ app_main ()
          gfx_pos (0, 0, GFX_L | GFX_T);
          gfx_7seg (9, "%d", response);
          gfx_pos (0, 100, GFX_L | GFX_T);
-         gfx_text (-1, "%s", imageurl);
+         gfx_text (-1, "%s", *imageurl ? imageurl : "No URL set");
       }
       if (showtime || !image)
       {
