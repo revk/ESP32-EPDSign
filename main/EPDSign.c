@@ -262,9 +262,9 @@ getimage (char season)
                         jo_string (j, "read", fn);
                         revk_info ("SD", &j);
                         response = 200; // Treat as received
-                     free (image);
-                     image = buf;
-                     buf = NULL;
+                        free (image);
+                        image = buf;
+                        buf = NULL;
                      }
                   }
                }
@@ -349,29 +349,29 @@ app_main ()
          jo_int (j, "MISO", sdmiso.num);
          jo_int (j, "CLK", sdsck.num);
          revk_error ("SD", &j);
-         vTaskDelete (NULL);
-         return;
-      }
-      esp_vfs_fat_sdmmc_mount_config_t mount_config = {
-         .format_if_mount_failed = 1,
-         .max_files = 2,
-         .allocation_unit_size = 16 * 1024,
-         .disk_status_check_enable = 1,
-      };
-      sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT ();
-      slot_config.gpio_cs = sdss.num;
-      slot_config.host_id = host.slot;
-      ret = esp_vfs_fat_sdspi_mount (sd_mount, &host, &slot_config, &mount_config, &card);
-      if (ret)
+      } else
       {
-         ESP_LOGE (TAG, "SD %d", ret);
-         jo_t j = jo_object_alloc ();
-         jo_string (j, "error", "Failed to mount");
-         jo_int (j, "code", ret);
-         revk_error ("SD", &j);
-         card = NULL;
+         esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+            .format_if_mount_failed = 1,
+            .max_files = 2,
+            .allocation_unit_size = 16 * 1024,
+            .disk_status_check_enable = 1,
+         };
+         sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT ();
+         slot_config.gpio_cs = sdss.num;
+         slot_config.host_id = host.slot;
+         ret = esp_vfs_fat_sdspi_mount (sd_mount, &host, &slot_config, &mount_config, &card);
+         if (ret)
+         {
+            ESP_LOGE (TAG, "SD %d", ret);
+            jo_t j = jo_object_alloc ();
+            jo_string (j, "error", "Failed to mount");
+            jo_int (j, "code", ret);
+            revk_error ("SD", &j);
+            card = NULL;
+         }
+         // TODO SD LED
       }
-      // TODO SD LED
    }
    gfx_lock ();
    gfx_clear (0);
