@@ -262,10 +262,10 @@ getimage (char season)
                         jo_string (j, "read", fn);
                         revk_info ("SD", &j);
                         response = 200; // Treat as received
-                     }
                      free (image);
                      image = buf;
                      buf = NULL;
+                     }
                   }
                }
                fclose (f);
