@@ -366,7 +366,6 @@ app_main ()
          ret = esp_vfs_fat_sdspi_mount (sd_mount, &host, &slot_config, &mount_config, &card);
          if (ret)
          {
-            ESP_LOGE (TAG, "SD %d", ret);
             jo_t j = jo_object_alloc ();
             jo_string (j, "error", "Failed to mount");
             jo_int (j, "code", ret);
@@ -503,7 +502,35 @@ app_main ()
          int s = (showtime & 0x3F) ? : 4;
          gfx_pos ((showtime & 0x80) ? 0 : (showtime & 0x40) ? gfx_width () - 1 : gfx_width () / 2, gfx_height () - 1,
                   (showtime & 0x80 ? GFX_L : 0) | (showtime & 0x40 ? GFX_R : 0) | (showtime & 0xC0 ? 0 : GFX_C) | GFX_B);
-         if (s * (6 * 15 + 1) <= gfx_width ())  // Datetime fits
+         if (*refdate)
+         {
+            int year = t.tm_year + 1900;
+            struct tm t = { 0 };
+            int y = 0,
+               m = 0,
+               d = 0,
+               H = 0,
+               M = 0,
+               S = 0;
+            sscanf (refdate, "%d-%d-%d %d:%d:%d", &y, &m, &d, &H, &M, &S);
+            t.tm_year = (y ? : year) - 1900;
+            t.tm_mon = m - 1;
+            t.tm_mday = d;
+            t.tm_hour = H;
+            t.tm_min = M;
+            t.tm_sec = S;
+            t.tm_isdst = -1;
+            int secs = mktime (&t) - now;
+            if (secs < 0 && !y)
+            {                   // To next date
+               t.tm_year++;
+               t.tm_isdst = -1;
+               secs = mktime (&t) - now;
+            }
+            if (secs < 0)
+               secs = -secs;
+            gfx_7seg (s, "%04ld", secs / 86400);
+         } else if (s * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
             gfx_7seg (s, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
             gfx_7seg (s, "%02d:%02d", t.tm_hour, t.tm_min);
@@ -529,6 +556,7 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Image Base URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
    revk_web_setting (req, "Clock size", "showtime");
+   revk_web_setting (req, "Reference date", "refdate");
    revk_web_setting (req, "Day size", "showday");
    revk_web_setting (req, "Light pattern", "lights");
    revk_web_setting (req, "Light on", "lighton");
