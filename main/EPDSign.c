@@ -452,7 +452,6 @@ app_main ()
          showlights (lighton == lightoff || (lighton < lightoff && lighton <= hhmm && lightoff > hhmm)
                      || (lightoff < lighton && (lighton <= hhmm || lightoff > hhmm)) ? lights : "");
       }
-      b.redraw = 0;
       int response = 0;
       {                         // Seasonal changes
          static char lastseason = 0;
@@ -469,8 +468,9 @@ app_main ()
             response = getimage (season);
          }
       }
-      if (response != 200 && image && !showtime && !fast)
+      if (response != 200 && image && !showtime && !fast && !b.redraw)
          continue;
+      b.redraw = 0;
       // Static image
       gfx_lock ();
       if (reshow)
@@ -504,6 +504,8 @@ app_main ()
                   (showtime & 0x80 ? GFX_L : 0) | (showtime & 0x40 ? GFX_R : 0) | (showtime & 0xC0 ? 0 : GFX_C) | GFX_B);
          if (*refdate)
          {
+            uint32_t secs = 0;
+
             int year = t.tm_year + 1900;
             struct tm t = { 0 };
             int y = 0,
@@ -521,16 +523,16 @@ app_main ()
                t.tm_min = M;
                t.tm_sec = S;
                t.tm_isdst = -1;
-               int secs = mktime (&t) - now;
-               if (secs < 0 && !y)
+               int s = mktime (&t) - now;
+               if (s < 0 && !y)
                {                // To next date
                   t.tm_year++;
                   t.tm_isdst = -1;
-                  secs = mktime (&t) - now;
+                  s = mktime (&t) - now;
                }
-               if (secs < 0)
-                  secs = -secs;
-               gfx_7seg (s, "%04ld", secs / 86400);
+               if (s < 0)
+                  s = -s;
+               secs = s;
             } else
             {                   // Try uptime as hostname
                struct sockaddr_in6 dest_addr = { 0 };
@@ -540,9 +542,8 @@ app_main ()
                //dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
                int sock = socket (AF_INET6, SOCK_DGRAM, IPPROTO_IPV6);
                if (sock < 0)
-               {
                   ESP_LOGE (TAG, "SNMP sock failed %s", refdate);
-               } else
+               else
                {                // very crude IPv6 SNMP uptime
                   uint8_t payload[] =
                      { 0x30, 0x29, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x1c, 0x02, 0x04,
@@ -553,13 +554,9 @@ app_main ()
                   *(uint32_t *) (payload + 17) = id;
                   int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
                   if (err < 0)
-                  {
                      ESP_LOGE (TAG, "SNMP Tx failed");
-                     close (sock);
-                     sock = -1;
-                  } else
+                  else
                   {
-
                      struct timeval timeout;
                      timeout.tv_sec = 1;
                      timeout.tv_usec = 0;
@@ -569,36 +566,33 @@ app_main ()
                      socklen_t socklen = sizeof (source_addr);
                      int len = recvfrom (sock, rx, sizeof (rx), 0, (struct sockaddr *) &source_addr, &socklen);
                      if (len < 47)
-                     {
                         ESP_LOGE (TAG, "SNMP Rx failed (%d)", len);
-                        close (sock);
-                        sock = -1;
-                     } else
-                     {
-                        //ESP_LOGE (TAG, "SNMP Rx %d", len);
+                     else
+                     {          // Crude, not parsed
                         if (*(uint32_t *) (rx + 17) != id)
-                        {
                            ESP_LOGE (TAG, "SNMP Bad ID (len %d) ID %08lX", len, id);
-                           close (sock);
-                           sock = -1;
-                        } else
-                        {       // Crude - no real checks
-                           uint32_t ticks = (rx[len - 4] << 24) | (rx[len - 3] << 16) | (rx[len - 2] << 8) | rx[len - 1];
-                           ticks /= 6000;       // Minutes...
-                           if (ticks < 14400)
-                              gfx_7seg (s, "%ld.%03ld", ticks / 1440, ticks % 1440 * 100 / 144);
-                           else if (ticks < 144000)
-                              gfx_7seg (s, "%02ld.%02ld", ticks / 1440, ticks % 1440 * 10 / 144);
-                           else
-                              gfx_7seg (s, "%03ld.%ld", ticks / 1440, ticks % 1440 / 144);
-                           close (sock);
-                        }
+                        else
+                           secs = ((rx[len - 4] << 24) | (rx[len - 3] << 16) | (rx[len - 2] << 8) | rx[len - 1]) / 100;
                      }
                   }
+                  close (sock);
                }
-               if (sock < 0)
-                  gfx_7seg (s, "----");
             }
+            // Show days, 4 sig fig
+            if (!secs)
+               gfx_7seg (s, "----");
+            else if (secs < 86400)
+               gfx_7seg (s, "%02ld:%02ld", secs / 3600, secs % 3600 / 60);
+            else if (secs < 864000)
+               gfx_7seg (s, "%ld.%03ld", secs / 86400, secs % 86400 * 10 / 864);
+            else if (secs < 8640000)
+               gfx_7seg (s, "%ld.%02ld", secs / 86400, secs % 86400 / 864);
+            else if (secs < 86400000)
+               gfx_7seg (s, "%ld.%ld", secs / 86400, secs % 86400 / 8640);
+            else if (secs < 864000000)
+               gfx_7seg (s, "%ld", secs / 86400);
+            else
+               gfx_7seg (s, "9999");
          } else if (s * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
             gfx_7seg (s, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else

@@ -15,7 +15,7 @@ u32	recheck		60	.live=1			// Live check time (seconds)
 u8	fast		3	.live=1			// Use fast updates even for major image change
 u8	showtime		.live=1	.flags="< >"	// Show clock (size 0-18, and < or >)
 u8	showday			.live=1	.flags="< >"	// Show day (size 0-9, and < or >)
-s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time
+s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	lights		RGB	.live=1			// LEDs pattern
 u16	light.on		.live=1	.place="HHMM"	// Lights on time (HHMM)
