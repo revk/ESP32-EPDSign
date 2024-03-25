@@ -585,9 +585,9 @@ app_main ()
                         {       // Crude - no real checks
                            uint32_t ticks = (rx[len - 4] << 24) | (rx[len - 3] << 16) | (rx[len - 2] << 8) | rx[len - 1];
                            ticks /= 6000;       // Minutes...
-                           if (ticks < 1440)
-                              gfx_7seg (s, "0.%03ld", ticks * 100 / 144);
-                           else if (ticks < 14400)
+                           if (ticks < 14400)
+                              gfx_7seg (s, "%ld.%03ld", ticks / 1440, ticks % 1440 * 100 / 144);
+                           else if (ticks < 144000)
                               gfx_7seg (s, "%02ld.%02ld", ticks / 1440, ticks % 1440 * 10 / 144);
                            else
                               gfx_7seg (s, "%03ld.%ld", ticks / 1440, ticks % 1440 / 144);
