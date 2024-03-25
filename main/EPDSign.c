@@ -549,7 +549,7 @@ app_main ()
                      0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b,
                      0x06, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x05, 0x00
                   };
-                  uint32_t id = ((esp_random () & 0x7FFFFFFF) | 0x40000000);    // bodegy
+                  uint32_t id = ((esp_random () & 0x7FFFFF7F) | 0x40000040);    // bodegy
                   *(uint32_t *) (payload + 17) = id;
                   int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
                   if (err < 0)
@@ -575,10 +575,10 @@ app_main ()
                         sock = -1;
                      } else
                      {
-                        ESP_LOGE (TAG, "SNMP Rx %d", len);
+                        //ESP_LOGE (TAG, "SNMP Rx %d", len);
                         if (*(uint32_t *) (rx + 17) != id)
                         {
-                           ESP_LOGE (TAG, "SNMP Bad ID");
+                           ESP_LOGE (TAG, "SNMP Bad ID (len %d) ID %08lX", len, id);
                            close (sock);
                            sock = -1;
                         } else
