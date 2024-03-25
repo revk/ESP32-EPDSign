@@ -37,7 +37,7 @@ settings.h:	components/ESP32-RevK/revk_settings settings.def components/ESP32-Re
 components/ESP32-RevK/revk_settings: components/ESP32-RevK/revk_settings.c
 	make -C components/ESP32-RevK
 
-set:    epd75k epd75r epd154k epd154r ssd1681 epd29k
+set:    epd75r epd154k epd154r ssd1681 epd29k epd75k
 
 epd75k:
 	components/ESP32-RevK/setbuildsuffix -S3-MINI-N4-R2-EPD75K
