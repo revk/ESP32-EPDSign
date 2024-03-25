@@ -581,8 +581,8 @@ app_main ()
             // Show days, 4 sig fig
             if (!secs)
                gfx_7seg (s, "----");
-            else if (secs < 86400)
-               gfx_7seg (s, "%02ld:%02ld", secs / 3600, secs % 3600 / 60);
+            else if (secs < 86400 && s * (7 + 6 + 7 + 6 + 6) <= gfx_width ())
+               gfx_7seg (s, "0:%02ld:%02ld", secs / 3600, secs % 3600 / 60);
             else if (secs < 864000)
                gfx_7seg (s, "%ld.%03ld", secs / 86400, secs % 86400 * 10 / 864);
             else if (secs < 8640000)
