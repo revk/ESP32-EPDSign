@@ -512,24 +512,91 @@ app_main ()
                H = 0,
                M = 0,
                S = 0;
-            sscanf (refdate, "%d-%d-%d %d:%d:%d", &y, &m, &d, &H, &M, &S);
-            t.tm_year = (y ? : year) - 1900;
-            t.tm_mon = m - 1;
-            t.tm_mday = d;
-            t.tm_hour = H;
-            t.tm_min = M;
-            t.tm_sec = S;
-            t.tm_isdst = -1;
-            int secs = mktime (&t) - now;
-            if (secs < 0 && !y)
-            {                   // To next date
-               t.tm_year++;
+            if (sscanf (refdate, "%d-%d-%d %d:%d:%d", &y, &m, &d, &H, &M, &S) >= 3)
+            {
+               t.tm_year = (y ? : year) - 1900;
+               t.tm_mon = m - 1;
+               t.tm_mday = d;
+               t.tm_hour = H;
+               t.tm_min = M;
+               t.tm_sec = S;
                t.tm_isdst = -1;
-               secs = mktime (&t) - now;
+               int secs = mktime (&t) - now;
+               if (secs < 0 && !y)
+               {                // To next date
+                  t.tm_year++;
+                  t.tm_isdst = -1;
+                  secs = mktime (&t) - now;
+               }
+               if (secs < 0)
+                  secs = -secs;
+               gfx_7seg (s, "%04ld", secs / 86400);
+            } else
+            {                   // Try uptime as hostname
+               struct sockaddr_in6 dest_addr = { 0 };
+               inet6_aton (refdate, &dest_addr.sin6_addr);
+               dest_addr.sin6_family = AF_INET6;
+               dest_addr.sin6_port = htons (161);
+               //dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
+               int sock = socket (AF_INET6, SOCK_DGRAM, IPPROTO_IPV6);
+               if (sock < 0)
+               {
+                  ESP_LOGE (TAG, "SNMP sock failed %s", refdate);
+               } else
+               {                // very crude IPv6 SNMP uptime
+                  uint8_t payload[] =
+                     { 0x30, 0x29, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x1c, 0x02, 0x04,
+                     0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b,
+                     0x06, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x05, 0x00
+                  };
+                  uint32_t id = ((esp_random () & 0x7FFFFFFF) | 0x40000000);    // bodegy
+                  *(uint32_t *) (payload + 17) = id;
+                  int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
+                  if (err < 0)
+                  {
+                     ESP_LOGE (TAG, "SNMP Tx failed");
+                     close (sock);
+                     sock = -1;
+                  } else
+                  {
+
+                     struct timeval timeout;
+                     timeout.tv_sec = 1;
+                     timeout.tv_usec = 0;
+                     setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+                     uint8_t rx[100];
+                     struct sockaddr_storage source_addr;
+                     socklen_t socklen = sizeof (source_addr);
+                     int len = recvfrom (sock, rx, sizeof (rx), 0, (struct sockaddr *) &source_addr, &socklen);
+                     if (len < 47)
+                     {
+                        ESP_LOGE (TAG, "SNMP Rx failed (%d)", len);
+                        close (sock);
+                        sock = -1;
+                     } else
+                     {
+                        ESP_LOGE (TAG, "SNMP Rx %d", len);
+                        if (*(uint32_t *) (rx + 17) != id)
+                        {
+                           ESP_LOGE (TAG, "SNMP Bad ID");
+                           close (sock);
+                           sock = -1;
+                        } else
+                        {       // Crude - no real checks
+                           uint32_t ticks = (rx[len - 4] << 24) | (rx[len - 3] << 16) | (rx[len - 2] << 8) | rx[len - 1];
+                           ticks /= 6000;       // Minutes...
+                           if (ticks < 1440)
+                              gfx_7seg (s, "%02ld:%02ld", ticks / 60, ticks % 60);
+                           else
+                              gfx_7seg (s, "%03ld.%ld", ticks / 1440, ticks % 1440 / 144);
+                           close (sock);
+                        }
+                     }
+                  }
+               }
+               if (sock < 0)
+                  gfx_7seg (s, "----");
             }
-            if (secs < 0)
-               secs = -secs;
-            gfx_7seg (s, "%04ld", secs / 86400);
          } else if (s * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
             gfx_7seg (s, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
