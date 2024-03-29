@@ -550,7 +550,7 @@ app_main ()
                t = jo_next (j);
                jo_strncpy (j, val, sizeof (val));
                time_t this = parse_time (val);
-               if (this > 0 && (!binfirst || this < binfirst))
+               if (this > now - 3600 && (!binfirst || this < binfirst))
                   binfirst = this;
                t = jo_skip (j);
             }
@@ -587,6 +587,8 @@ app_main ()
          struct tm tm;
          localtime_r (&binfirst, &tm);
          gfx_text (-9, tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+         char lights[10],
+          *l = lights;
          jo_t j = jo_parse_str (bins);
          jo_type_t t = jo_next (j);     // Start object
          while (t == JO_TAG)
@@ -598,10 +600,24 @@ app_main ()
             jo_strncpy (j, val, sizeof (val));
             time_t this = parse_time (val);
             if (this && this <= binfirst)
-               gfx_text (-7, tag);
+            {
+               if (*tag && tag[1] == ':')
+               {
+                  if (l < lights + sizeof (lights) - 1)
+                     *l++ = *tag;
+                  gfx_text (-7, tag + 2);
+               } else
+                  gfx_text (-7, tag);
+            }
             t = jo_skip (j);
          }
          jo_free (&j);
+         *l = 0;
+         if (*lights)
+         {
+            showlights (binfirst < now + 86400 ? lights : "K");
+            b.lightoverride = 1;
+         }
       }
       if (!image && response)
       {                         // Error
