@@ -28,3 +28,5 @@ gpio	sd.miso		6				// MicroSD MISO
 gpio	sd.cd		-7				// MicroSD CD
 
 gpio	relay		8				// Relay output
+
+s	bins.url					// URL to get JSON set of bin colours and dates

@@ -65,6 +65,29 @@ gfx_qr (const char *value, int s)
    return NULL;
 }
 
+const char *const longday[] = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
+
+time_t
+parse_time (const char *t)
+{
+   struct tm tm = { 0 };
+   int y = 0,
+      m = 0,
+      d = 0,
+      H = 0,
+      M = 0,
+      S = 0;
+   sscanf (t, "%d-%d-%d %d:%d:%d", &y, &m, &d, &H, &M, &S);
+   tm.tm_year = y - 1900;
+   tm.tm_mon = m - 1;
+   tm.tm_mday = d;
+   tm.tm_hour = H;
+   tm.tm_min = M;
+   tm.tm_sec = S;
+   tm.tm_isdst = -1;
+   return mktime (&tm);
+}
+
 void
 showlights (const char *rgb)
 {
@@ -471,12 +494,79 @@ app_main ()
       if (response != 200 && image && !showtime && !fast && !b.redraw)
          continue;
       b.redraw = 0;
+      static time_t binnext = 0;
+      static time_t binfirst = 0;
+      static char *bins = NULL;
+      if (*binsurl && (!bins || now > binnext) && !revk_link_down ())
+      {                         // Load bins
+         free (bins);
+         bins = NULL;
+         int32_t len = 0;
+         esp_http_client_config_t config = {
+            .url = binsurl,
+            .crt_bundle_attach = esp_crt_bundle_attach,
+            .timeout_ms = 60000,        // Can take time
+         };
+         esp_http_client_handle_t client = esp_http_client_init (&config);
+         if (client)
+         {
+            if (!esp_http_client_open (client, 0))
+            {
+               len = esp_http_client_fetch_headers (client);
+               if (!len)
+                  len = 1000;
+               ESP_LOGE (TAG, "Len %ld URL %s", len, binsurl);
+               if (len > 0 && len <= 1000)
+               {
+                  bins = mallocspi (len);
+                  if (bins)
+                  {
+                     len = esp_http_client_read_response (client, bins, len - 1);
+                     esp_http_client_close (client);
+                     if (len > 0)
+                     {
+                        bins[len] = 0;
+                        ESP_LOGE (TAG, "Bins %s", bins);
+                     } else
+                     {
+                        free (bins);
+                        bins = NULL;
+                     }
+                  }
+               }
+            }
+            esp_http_client_cleanup (client);
+         }
+         if (bins)
+         {
+            binfirst = 0;
+            jo_t j = jo_parse_str (bins);
+            jo_type_t t = jo_next (j);  // Start object
+            while (t == JO_TAG)
+            {
+               char tag[20] = "",
+                  val[25] = "";
+               jo_strncpy (j, tag, sizeof (tag));
+               t = jo_next (j);
+               jo_strncpy (j, val, sizeof (val));
+               time_t this = parse_time (val);
+               if (this > 0 && (!binfirst || this < binfirst))
+                  binfirst = this;
+               t = jo_skip (j);
+            }
+            jo_free (&j);
+            if (binfirst)
+               binnext = binfirst + 3600;
+         }
+         if (binnext < now + 3600)
+            binnext = now + 3600;
+      }
       // Static image
       gfx_lock ();
       if (reshow)
          reshow--;
       if (refresh && now / refresh != fresh)
-      {                         //Periodic refresh, e.g.once a day
+      {                         // Periodic refresh, e.g.once a day
          fresh = now / refresh;
          gfx_refresh ();
       } else if (response == 200 && !showtime)
@@ -490,6 +580,29 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
+      if (bins && binfirst)
+      {                         // Show next bin dates
+         gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
+         gfx_text (-7, "NEXT BIN");
+         struct tm tm;
+         localtime_r (&binfirst, &tm);
+         gfx_text (-9, tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+         jo_t j = jo_parse_str (bins);
+         jo_type_t t = jo_next (j);     // Start object
+         while (t == JO_TAG)
+         {
+            char tag[20] = "",
+               val[25] = "";
+            jo_strncpy (j, tag, sizeof (tag));
+            t = jo_next (j);
+            jo_strncpy (j, val, sizeof (val));
+            time_t this = parse_time (val);
+            if (this && this <= binfirst)
+               gfx_text (-7, tag);
+            t = jo_skip (j);
+         }
+         jo_free (&j);
+      }
       if (!image && response)
       {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
@@ -604,7 +717,6 @@ app_main ()
          gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2,
                   gfx_height () - 1 - (showtime & 0x3F) * 10,
                   (showday & 0x80 ? GFX_L : 0) | (showday & 0x40 ? GFX_R : 0) | (showday & 0xC0 ? 0 : GFX_C) | GFX_B);
-         const char *const longday[] = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY" };
          gfx_text (s, longday[t.tm_wday]);
       }
       gfx_unlock ();
