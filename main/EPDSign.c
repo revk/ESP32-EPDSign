@@ -804,7 +804,7 @@ app_main ()
                      SUN_CIVIL_TWILIGHT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
-         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
+         gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
          y -= s * 10;
       }
       if (showrise && (poslat || poslon))
@@ -815,7 +815,7 @@ app_main ()
                       SUN_CIVIL_TWILIGHT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
-         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
+         gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
          y -= s * 10;
       }
 #endif
