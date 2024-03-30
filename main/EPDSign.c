@@ -799,7 +799,7 @@ app_main ()
       if (showset && (poslat || poslon))
       {
          int s = start (showset);
-         time_t when = sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, 0);
+         time_t when = sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, SUN_DEFAULT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
@@ -808,7 +808,7 @@ app_main ()
       if (showrise && (poslat || poslon))
       {
          int s = start (showrise);
-         time_t when = sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, 0);
+         time_t when = sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, SUN_DEFAULT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
