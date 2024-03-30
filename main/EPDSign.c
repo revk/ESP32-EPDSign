@@ -583,7 +583,7 @@ app_main ()
       if (bins && binfirst)
       {                         // Show next bin dates
          gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
-         gfx_text (-7, "NEXT BIN");
+         //gfx_text (-7, "NEXT BIN");
          struct tm tm;
          localtime_r (&binfirst, &tm);
          gfx_text (-9,  tm.tm_yday == t.tm_yday?"* TODAY *":tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
