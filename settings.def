@@ -23,6 +23,7 @@ u8	show.rise		.live=1 .flags="< >_"	// Show sunrise (size 0-18, and <, >, or _)
 s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	bins.url					// URL to get JSON set of bin colours and dates
+s	icons.url		.live=1			// Base URL for icons (.mono0 extn)
 
 #ifdef	CONFIG_REVK_SOLAR
 s32	pos.lat			.live=1 .decimal=7	// Latitude

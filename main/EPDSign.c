@@ -37,8 +37,10 @@ uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
 time_t binnext = 0;
 time_t binfirst = 0;
+uint8_t bincount = 0;
 char *bins = NULL;
 int defcon = -1;                // DEFCON level
+#define	BINMAX	4
 
 led_strip_handle_t strip = NULL;
 sdmmc_card_t *card = NULL;
@@ -191,30 +193,16 @@ app_callback (int client, const char *prefix, const char *target, const char *su
 }
 
 int
-getimage (char season)
+download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size)
 {
-   if (!*imageurl)
-      return 0;
+   ESP_LOGD (TAG, "Get %s %lu", url, size);
    time_t now = time (0);
-   int l = strlen (imageurl);
-   char *url = mallocspi (l + 3);
-   strcpy (url, imageurl);
-   char *s = strrchr (url, '*');
-   if (s)
-   {
-      if (season)
-         *s = season;
-      else
-         while (*s++)
-            s[-1] = *s;
-   } else if (season)
-   {
-      url[l++] = '?';
-      url[l++] = season;
-      url[l] = 0;
-   }
-   ESP_LOGD (TAG, "Get %s", url);
-   const int size = gfx_width () * gfx_height () / 8;
+   uint8_t *image = NULL;
+   if (imagep)
+      image = *imagep;
+   time_t imagetime = 0;
+   if (imagetimep)
+      imagetime = *imagetimep;
    int32_t len = 0;
    uint8_t *buf = NULL;
    esp_http_client_config_t config = {
@@ -246,6 +234,10 @@ getimage (char season)
                   len = esp_http_client_read_response (client, (char *) buf, size);
             }
             response = esp_http_client_get_status_code (client);
+            if (response == 200 && len != size)
+               ESP_LOGE (TAG, "Wrong size %s (%ld expected %lu)", url, len, size);
+            else if (response != 200)
+               ESP_LOGE (TAG, "Bad response %s (%d)", url, response);
             esp_http_client_close (client);
          }
          esp_http_client_cleanup (client);
@@ -271,7 +263,7 @@ getimage (char season)
       }
       if (len == size && buf)
       {
-         if (gfxinvert)
+         if (gfxinvert && size == gfx_width () * gfx_height () / 8)
             for (int32_t i = 0; i < size; i++)
                buf[i] ^= 0xFF;
          if (image && !memcmp (buf, image, size))
@@ -332,8 +324,39 @@ getimage (char season)
          free (fn);
       }
    }
-   free (url);
    free (buf);
+   if (imagep)
+      *imagep = image;
+   if (imagetimep)
+      *imagetimep = imagetime;
+   return response;
+}
+
+int
+getimage (char season)
+{
+   if (!*imageurl)
+      return 0;
+   int l = strlen (imageurl);
+   char *url = mallocspi (l + 3);
+   strcpy (url, imageurl);
+   char *s = strrchr (url, '*');
+   if (s)
+   {
+      if (season)
+         *s = season;
+      else
+         while (*s++)
+            s[-1] = *s;
+   } else if (season)
+   {
+      url[l++] = '?';
+      url[l++] = season;
+      url[l] = 0;
+   }
+   const int size = gfx_width () * gfx_height () / 8;
+   int response = download (&image, &imagetime, url, size);
+   free (url);
    return response;
 }
 
@@ -343,6 +366,50 @@ getimage (char season)
 #ifdef	CONFIG_REVK_APCONFIG
 #error 	Clash with CONFIG_REVK_APCONFIG set
 #endif
+
+typedef struct icon_s icon_t;
+struct icon_s
+{
+   icon_t *next;
+   const char *name;
+   uint8_t *icon;
+};
+icon_t *icons = NULL;
+
+void
+showicon (const char *name)
+{
+   icon_t *i;
+   for (i = icons; i && strcmp (i->name, name); i = i->next);
+   if (!i && iconsurl)
+   {
+      i = malloc (sizeof (*i));
+      if (i)
+      {
+         memset (i, 0, sizeof (*i));
+         int size = (gfx_width () / BINMAX + 7) / 8 * (gfx_width () / BINMAX);
+         char *url;
+         asprintf (&url, "%s/%s.mono0", iconsurl, name);
+         int response = download (&i->icon, NULL, url, size);
+         if (response == 200 && i->icon)
+         {
+            i->name = strdup (name);
+            i->next = icons;
+            icons = i;
+         } else
+         {
+            free (i->icon);
+            free (i);
+            i = NULL;
+         }
+         free (url);
+      }
+   }
+   if (!i)
+      gfx_text (4, "%s ", name);
+   else
+      gfx_icon2 (gfx_width () / BINMAX, gfx_width () / BINMAX, i->icon);
+}
 
 void
 app_main ()
@@ -571,6 +638,7 @@ app_main ()
          if (bins)
          {
             binfirst = 0;
+            bincount = 0;
             jo_t j = jo_parse_str (bins);
             jo_type_t t = jo_next (j);  // Start object
             while (t == JO_TAG)
@@ -582,7 +650,12 @@ app_main ()
                jo_strncpy (j, val, sizeof (val));
                time_t this = parse_time (val);
                if (this > now - 3600 && (!binfirst || this < binfirst))
+               {
                   binfirst = this;
+                  bincount = 0;
+               }
+               if (this == binfirst)
+                  bincount++;
                t = jo_skip (j);
             }
             jo_free (&j);
@@ -611,7 +684,7 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
-      if (bins && binfirst)
+      if (bins && binfirst && bincount)
       {                         // Show next bin dates
          gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
          //gfx_text (-7, "NEXT BIN");
@@ -620,9 +693,11 @@ app_main ()
          gfx_text (-9, tm.tm_yday == t.tm_yday ? "* TODAY *" : tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
          char lights[10],
           *l = lights;
+         gfx_pos (gfx_width () / 2 - bincount * (gfx_width () / BINMAX / 2), gfx_y (), GFX_L | GFX_T | GFX_H);
          jo_t j = jo_parse_str (bins);
          jo_type_t t = jo_next (j);     // Start object
-         while (t == JO_TAG)
+         int count = 0;
+         while (t == JO_TAG && count < bincount)
          {
             char tag[20] = "",
                val[25] = "";
@@ -632,13 +707,15 @@ app_main ()
             time_t this = parse_time (val);
             if (this && this <= binfirst)
             {
-               if (*tag && tag[1] == ':')
+               char *name = tag;
+               if (*name && name[1] == ':')
                {
                   if (l < lights + sizeof (lights) - 1)
-                     *l++ = *tag;
-                  gfx_text (-7, tag + 2);
-               } else
-                  gfx_text (-7, tag);
+                     *l++ = *name;
+                  name += 2;
+               }
+               showicon (name);
+               count++;
             }
             t = jo_skip (j);
          }
@@ -799,7 +876,9 @@ app_main ()
       if (showset && (poslat || poslon))
       {
          int s = start (showset);
-         time_t when = sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, SUN_DEFAULT);
+         time_t when =
+            sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale,
+                     SUN_DEFAULT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
@@ -808,7 +887,9 @@ app_main ()
       if (showrise && (poslat || poslon))
       {
          int s = start (showrise);
-         time_t when = sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale, SUN_DEFAULT);
+         time_t when =
+            sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale,
+                      SUN_DEFAULT);
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
