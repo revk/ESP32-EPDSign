@@ -586,7 +586,7 @@ app_main ()
          gfx_text (-7, "NEXT BIN");
          struct tm tm;
          localtime_r (&binfirst, &tm);
-         gfx_text (-9, tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+         gfx_text (-9,  tm.tm_yday == t.tm_yday?"* TODAY *":tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
          char lights[10],
           *l = lights;
          jo_t j = jo_parse_str (bins);
