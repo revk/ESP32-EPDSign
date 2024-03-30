@@ -135,13 +135,19 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    char value[1000];
    int len = 0;
    *value = 0;
-   if (j && jo_here (j) == JO_STRING)
+   if (j)
    {
       len = jo_strncpy (j, value, sizeof (value));
       if (len < 0)
          return "Expecting JSON string";
       if (len > sizeof (value))
          return "Too long";
+   }
+   if (prefix && !strcmp (prefix, "DEFCON") && target && isdigit ((int) *target) && !target[1])
+   {
+      const char *err = setdefcon (*target - '0', value);
+      b.redraw = 1;
+      return err;
    }
    if (client || !prefix || target || strcmp (prefix, prefixcommand) || !suffix)
       return NULL;
@@ -176,12 +182,6 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       b.lightoverride = (*value ? 1 : 0);
       showlights (value);
       return "";
-   }
-   if (prefix && !strcmp (prefix, "DEFCON") && target && isdigit ((int) *target) && !target[1])
-   {
-      const char *err = setdefcon (*target - '0', value);
-      b.redraw = 1;
-      return err;
    }
    return NULL;
 }
@@ -543,7 +543,6 @@ app_main ()
                len = esp_http_client_fetch_headers (client);
                if (!len)
                   len = 1000;
-               ESP_LOGE (TAG, "Len %ld URL %s", len, binsurl);
                if (len > 0 && len <= 1000)
                {
                   bins = mallocspi (len);
@@ -554,7 +553,7 @@ app_main ()
                      if (len > 0)
                      {
                         bins[len] = 0;
-                        ESP_LOGE (TAG, "Bins %s", bins);
+                        ESP_LOGD (TAG, "Bins %s", bins);
                      } else
                      {
                         free (bins);
