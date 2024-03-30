@@ -759,13 +759,15 @@ app_main ()
          if (showtime & 0x20)
          {
             gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1,255);
-            y -= s;
+            gfx_fill (gfx_width (), 1, 255);
+            y -= s / 2;
          }
       }
       if (showday)
       {
          int s = (showday & 0x1F) ? : 4;
+         if (showtime & 0x20)
+            y -= s / 2;
          gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
                   (showday & 0x80 ? GFX_L : 0) | (showday & 0x40 ? GFX_R : 0) | (showday & 0xC0 ? 0 : GFX_C) | GFX_B);
          gfx_text (s, longday[t.tm_wday]);
@@ -773,13 +775,15 @@ app_main ()
          if (showday & 0x20)
          {
             gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1,255);
-            y -= s;
+            gfx_fill (gfx_width (), 1, 255);
+            y -= s / 2;
          }
       }
       if (showdefcon)
       {
          int s = (showdefcon & 0x1F) ? : 4;
+         if (showday & 0x20)
+            y -= s / 2;
          gfx_pos ((showdefcon & 0x80) ? 0 : (showdefcon & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
                   (showdefcon & 0x80 ? GFX_L : 0) | (showdefcon & 0x40 ? GFX_R : 0) | (showdefcon & 0xC0 ? 0 : GFX_C) | GFX_B);
          if (defcon < 0 || defcon > 5)
@@ -790,8 +794,8 @@ app_main ()
          if (showdefcon & 0x20)
          {
             gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1,255);
-            y -= s;
+            gfx_fill (gfx_width (), 1, 255);
+            y -= s / 2;
          }
       }
 
