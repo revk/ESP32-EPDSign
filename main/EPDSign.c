@@ -17,7 +17,11 @@ static const char TAG[] = "EPDSign";
 #include <hal/spi_types.h>
 #include <driver/gpio.h>
 
-#define BITFIELDS "-^"
+#define	LEFT	0x80            // Flags on font size
+#define	RIGHT	0x40
+#define	LINE	0x20
+#define	MASK	0x1F
+#define MINSIZE	4
 
 const char sd_mount[] = "/sd";
 
@@ -655,11 +659,30 @@ app_main ()
       }
       // Info at bottom
       gfx_pos_t y = gfx_height () - 1;
+      gfx_pos_t lasty = 0;
+      uint8_t lasts = 0;
+      int start (uint8_t s)
+      {
+         if (lasts & LINE)
+         {
+            gfx_pos (0, y, 0);
+            gfx_fill (gfx_width (), 1, 255);
+            y -= ((lasts & MASK) ? : MINSIZE) / 2;
+            y -= ((s & MASK) ? : MINSIZE) / 2;
+         }
+         if (((lasts & RIGHT) && (s & LEFT)) || ((lasts & LEFT) && (s & RIGHT)))
+            y = lasty;          // Assuming left/right can coexist (may be the case for DEFCON)
+         lasts = s;
+         gfx_pos ((s & LEFT) ? 0 : (s & RIGHT) ? gfx_width () - 1 : gfx_width () / 2, lasty = y,
+                  (s & LEFT ? GFX_L : 0) | (s & RIGHT ? GFX_R : 0) | (s & (LEFT | RIGHT) ? 0 : GFX_C) | GFX_B);
+         s &= MASK;
+         if (!s)
+            s = MINSIZE;
+         return s;
+      }
       if (showtime || !image)
       {
-         int s = (showtime & 0x1F) ? : 4;
-         gfx_pos ((showtime & 0x80) ? 0 : (showtime & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
-                  (showtime & 0x80 ? GFX_L : 0) | (showtime & 0x40 ? GFX_R : 0) | (showtime & 0xC0 ? 0 : GFX_C) | GFX_B);
+         int s = start (showtime);
          if (*refdate)
          {
             uint32_t secs = 0;
@@ -756,49 +779,24 @@ app_main ()
          else
             gfx_7seg (s, "%02d:%02d", t.tm_hour, t.tm_min);
          y -= s * 10;
-         if (showtime & 0x20)
-         {
-            gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1, 255);
-            y -= s / 2;
-         }
       }
       if (showday)
       {
-         int s = (showday & 0x1F) ? : 4;
-         if (showtime & 0x20)
-            y -= s / 2;
-         gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
-                  (showday & 0x80 ? GFX_L : 0) | (showday & 0x40 ? GFX_R : 0) | (showday & 0xC0 ? 0 : GFX_C) | GFX_B);
+         int s = start (showday);
          gfx_text (s, longday[t.tm_wday]);
          y -= s * 8;
-         if (showday & 0x20)
-         {
-            gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1, 255);
-            y -= s / 2;
-         }
       }
       if (showdefcon)
       {
-         int s = (showdefcon & 0x1F) ? : 4;
-         if (showday & 0x20)
-            y -= s / 2;
-         gfx_pos ((showdefcon & 0x80) ? 0 : (showdefcon & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
-                  (showdefcon & 0x80 ? GFX_L : 0) | (showdefcon & 0x40 ? GFX_R : 0) | (showdefcon & 0xC0 ? 0 : GFX_C) | GFX_B);
+         int s = start (showdefcon);
          if (defcon < 0 || defcon > 5)
             gfx_7seg (s, "-");
          else
             gfx_7seg (s, "%d", defcon);
          y -= s * 10;
-         if (showdefcon & 0x20)
-         {
-            gfx_pos (0, y, 0);
-            gfx_fill (gfx_width (), 1, 255);
-            y -= s / 2;
-         }
       }
 
+      start (0);
       gfx_unlock ();
       if (reshow)
          b.redraw = 1;
