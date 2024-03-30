@@ -31,6 +31,10 @@ static struct
 volatile uint32_t override = 0;
 uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
+time_t binnext = 0;
+time_t binfirst = 0;
+char *bins = NULL;
+int defcon = -1;                // DEFCON level
 
 led_strip_handle_t strip = NULL;
 sdmmc_card_t *card = NULL;
@@ -105,6 +109,26 @@ showlights (const char *rgb)
    led_strip_refresh (strip);
 }
 
+char *
+setdefcon (int level, char *value)
+{                               // DEFCON state
+   // With value it is used to turn on/off a defcon state, the lowest set dictates the defcon level
+   // With no value, this sets the DEFCON state directly instead of using lowest of state set
+   static uint8_t state = 0;    // DEFCON state
+   if (*value)
+   {
+      if (*value == '1' || *value == 't' || *value == 'y')
+         state |= (1 << level);
+      else
+         state &= ~(1 << level);
+      int l;
+      for (l = 0; l < 8 && !(state & (1 << l)); l++);
+      defcon = l;
+   } else
+      defcon = level;
+   return "";
+}
+
 const char *
 app_callback (int client, const char *prefix, const char *target, const char *suffix, jo_t j)
 {
@@ -130,6 +154,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    }
    if (!strcmp (suffix, "connect"))
    {
+      lwmqtt_subscribe (revk_mqtt (0), "DEFCON/#");
       return "";
    }
    if (!strcmp (suffix, "shutdown"))
@@ -151,6 +176,12 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       b.lightoverride = (*value ? 1 : 0);
       showlights (value);
       return "";
+   }
+   if (prefix && !strcmp (prefix, "DEFCON") && target && isdigit ((int) *target) && !target[1])
+   {
+      const char *err = setdefcon (*target - '0', value);
+      b.redraw = 1;
+      return err;
    }
    return NULL;
 }
@@ -494,9 +525,6 @@ app_main ()
       if (response != 200 && image && !showtime && !fast && !b.redraw)
          continue;
       b.redraw = 0;
-      static time_t binnext = 0;
-      static time_t binfirst = 0;
-      static char *bins = NULL;
       if (*binsurl && (!bins || now > binnext) && !revk_link_down ())
       {                         // Load bins
          free (bins);
@@ -586,7 +614,7 @@ app_main ()
          //gfx_text (-7, "NEXT BIN");
          struct tm tm;
          localtime_r (&binfirst, &tm);
-         gfx_text (-9,  tm.tm_yday == t.tm_yday?"* TODAY *":tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+         gfx_text (-9, tm.tm_yday == t.tm_yday ? "* TODAY *" : tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
          char lights[10],
           *l = lights;
          jo_t j = jo_parse_str (bins);
@@ -626,10 +654,12 @@ app_main ()
          gfx_pos (0, 100, GFX_L | GFX_T);
          gfx_text (-1, "%s", *imageurl ? imageurl : "No URL set");
       }
+      // Info at bottom
+      gfx_pos_t y = gfx_height () - 1;
       if (showtime || !image)
       {
          int s = (showtime & 0x3F) ? : 4;
-         gfx_pos ((showtime & 0x80) ? 0 : (showtime & 0x40) ? gfx_width () - 1 : gfx_width () / 2, gfx_height () - 1,
+         gfx_pos ((showtime & 0x80) ? 0 : (showtime & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
                   (showtime & 0x80 ? GFX_L : 0) | (showtime & 0x40 ? GFX_R : 0) | (showtime & 0xC0 ? 0 : GFX_C) | GFX_B);
          if (*refdate)
          {
@@ -726,15 +756,28 @@ app_main ()
             gfx_7seg (s, "%04d-%02d-%02d %02d:%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min);
          else
             gfx_7seg (s, "%02d:%02d", t.tm_hour, t.tm_min);
+         y -= s * 10;
       }
       if (showday)
       {
          int s = (showday & 0x3F) ? : 4;
-         gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2,
-                  gfx_height () - 1 - (showtime & 0x3F) * 10,
+         gfx_pos ((showday & 0x80) ? 0 : (showday & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
                   (showday & 0x80 ? GFX_L : 0) | (showday & 0x40 ? GFX_R : 0) | (showday & 0xC0 ? 0 : GFX_C) | GFX_B);
          gfx_text (s, longday[t.tm_wday]);
+         y -= s * 8;
       }
+      if (showdefcon)
+      {
+         int s = (showdefcon & 0x3F) ? : 4;
+         gfx_pos ((showdefcon & 0x80) ? 0 : (showdefcon & 0x40) ? gfx_width () - 1 : gfx_width () / 2, y,
+                  (showdefcon & 0x80 ? GFX_L : 0) | (showdefcon & 0x40 ? GFX_R : 0) | (showdefcon & 0xC0 ? 0 : GFX_C) | GFX_B);
+         if (defcon < 0 || defcon > 5)
+            gfx_7seg (s, "-");
+         else
+            gfx_7seg (s, "%d", defcon);
+         y -= s * 10;
+      }
+
       gfx_unlock ();
       if (reshow)
          b.redraw = 1;
