@@ -795,6 +795,30 @@ app_main ()
             gfx_7seg (s, "%d", defcon);
          y -= s * 10;
       }
+#ifdef	CONFIG_REVK_SOLAR
+      if (showset && (poslat || poslon))
+      {
+         int s = start (showset);
+         time_t when =
+            sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale,
+                     SUN_CIVIL_TWILIGHT);
+         struct tm tm = { 0 };
+         localtime_r (&when, &tm);
+         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
+         y -= s * 10;
+      }
+      if (showrise && (poslat || poslon))
+      {
+         int s = start (showrise);
+         time_t when =
+            sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale, (double) poslon / poslon_scale,
+                      SUN_CIVIL_TWILIGHT);
+         struct tm tm = { 0 };
+         localtime_r (&when, &tm);
+         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
+         y -= s * 10;
+      }
+#endif
 
       start (0);
       gfx_unlock ();
