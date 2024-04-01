@@ -705,7 +705,7 @@ app_main ()
             t = jo_next (j);
             jo_strncpy (j, val, sizeof (val));
             time_t this = parse_time (val);
-            if (this && this <= binfirst)
+            if (this && this == binfirst)
             {
                char *name = tag;
                if (*name && name[1] == ':')
