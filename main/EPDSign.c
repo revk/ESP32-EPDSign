@@ -660,10 +660,10 @@ app_main ()
             }
             jo_free (&j);
             if (binfirst)
-               binnext = binfirst + 3600;
+               binnext = binfirst + 3600 + (esp_random () % 7200);
          }
          if (binnext < now + 3600)
-            binnext = now + 3600;
+            binnext = now + 3600 + (esp_random () % 7200);
       }
       // Static image
       gfx_lock ();
