@@ -236,7 +236,7 @@ download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size
             response = esp_http_client_get_status_code (client);
             if (response == 200 && len != size)
                ESP_LOGE (TAG, "Wrong size %s (%ld expected %lu)", url, len, size);
-            else if (response != 200)
+            else if (response != 200 && response != 304)
                ESP_LOGE (TAG, "Bad response %s (%d)", url, response);
             esp_http_client_close (client);
          }
