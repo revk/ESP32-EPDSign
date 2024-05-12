@@ -635,6 +635,7 @@ app_main ()
             }
             esp_http_client_cleanup (client);
          }
+            char binold = 0;    // We have some old entries, so need to keep checking regularly until web site catches up with now
          if (bins)
          {
             binfirst = 0;
@@ -649,6 +650,8 @@ app_main ()
                t = jo_next (j);
                jo_strncpy (j, val, sizeof (val));
                time_t this = parse_time (val);
+               if (this < binfirst)
+                  binold = 1;
                if (this > now - 3600 && (!binfirst || this < binfirst))
                {
                   binfirst = this;
@@ -662,7 +665,7 @@ app_main ()
             if (binfirst)
                binnext = binfirst + 3600 + (esp_random () % 7200);
          }
-         if (binnext < now + 3600)
+         if (binold || binnext < now + 3600)
             binnext = now + 3600 + (esp_random () % 7200);
       }
       // Static image
@@ -684,7 +687,7 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
-      if (bins && binfirst && bincount)
+      if (bins && binfirst && bincount && binfirst < now + 6 * 86400)
       {                         // Show next bin dates
          gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
          //gfx_text (-7, "NEXT BIN");
