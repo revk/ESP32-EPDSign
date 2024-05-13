@@ -635,7 +635,7 @@ app_main ()
             }
             esp_http_client_cleanup (client);
          }
-            char binold = 0;    // We have some old entries, so need to keep checking regularly until web site catches up with now
+         char binold = 0;       // We have some old entries, so need to keep checking regularly until web site catches up with now
          if (bins)
          {
             binfirst = 0;
@@ -765,7 +765,7 @@ app_main ()
          int s = start (showtime);
          if (*refdate)
          {
-            uint32_t secs = 0;
+            uint64_t secs = 0;
 
             int year = t.tm_year + 1900;
             struct tm t = { 0 };
@@ -805,13 +805,14 @@ app_main ()
                if (sock < 0)
                   ESP_LOGE (TAG, "SNMP sock failed %s", refdate);
                else
-               {                // very crude IPv6 SNMP uptime
+               {                // very crude IPv6 SNMP uptime .1.3.6.1.2.1.1.3.0
                   uint8_t payload[] =
                      { 0x30, 0x29, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x1c, 0x02, 0x04,
                      0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x0e, 0x30, 0x0c, 0x06, 0x08, 0x2b,
                      0x06, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x05, 0x00
                   };
-                  uint32_t id = ((esp_random () & 0x7FFFFF7F) | 0x40000040);    // bodegy
+                  // Typical reply payload 302d 0201 0104 0670 7562 6c69 63a2 2002 0403 24ac 9802 0100 0201 0030 1230 1006 082b 0601 0201 0103 0043 0401 e191 05
+                  uint32_t id = ((esp_random () & 0x7FFFFF7F) | 0x40000040);    // bodge
                   *(uint32_t *) (payload + 17) = id;
                   int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
                   if (err < 0)
@@ -826,14 +827,23 @@ app_main ()
                      struct sockaddr_storage source_addr;
                      socklen_t socklen = sizeof (source_addr);
                      int len = recvfrom (sock, rx, sizeof (rx), 0, (struct sockaddr *) &source_addr, &socklen);
-                     if (len < 47)
+                     if (len < 44)
                         ESP_LOGE (TAG, "SNMP Rx failed (%d)", len);
                      else
                      {          // Crude, not parsed
                         if (*(uint32_t *) (rx + 17) != id)
                            ESP_LOGE (TAG, "SNMP Bad ID (len %d) ID %08lX", len, id);
                         else
-                           secs = ((rx[len - 4] << 24) | (rx[len - 3] << 16) | (rx[len - 2] << 8) | rx[len - 1]) / 100;
+                        {
+                           int l = rx[42];
+                           if (l < 8)
+                           {
+                              secs = 0;
+                              while (l)
+                                 secs = secs * 256 + rx[len - (l--)];
+                              secs /= 100;
+                           }
+                        }
                      }
                   }
                   close (sock);
@@ -843,15 +853,15 @@ app_main ()
             if (!secs)
                gfx_7seg (s, "----");
             else if (secs < 86400 && s * (7 + 6 + 7 + 6 + 6) <= gfx_width ())
-               gfx_7seg (s, "0:%02ld:%02ld", secs / 3600, secs % 3600 / 60);
+               gfx_7seg (s, "0:%02lld:%02lld", secs / 3600, secs % 3600 / 60);
             else if (secs < 864000)
-               gfx_7seg (s, "%ld.%03ld", secs / 86400, secs % 86400 * 10 / 864);
+               gfx_7seg (s, "%lld.%03lld", secs / 86400, secs % 86400 * 10 / 864);
             else if (secs < 8640000)
-               gfx_7seg (s, "%ld.%02ld", secs / 86400, secs % 86400 / 864);
+               gfx_7seg (s, "%lld.%02lld", secs / 86400, secs % 86400 / 864);
             else if (secs < 86400000)
-               gfx_7seg (s, "%ld.%ld", secs / 86400, secs % 86400 / 8640);
+               gfx_7seg (s, "%lld.%lld", secs / 86400, secs % 86400 / 8640);
             else if (secs < 864000000)
-               gfx_7seg (s, "%ld", secs / 86400);
+               gfx_7seg (s, "%lld", secs / 86400);
             else
                gfx_7seg (s, "9999");
          } else if (s * (6 * 15 + 1) <= gfx_width ())   // Datetime fits
