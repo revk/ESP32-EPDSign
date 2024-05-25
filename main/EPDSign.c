@@ -687,7 +687,7 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
-      if (bins && binfirst && bincount && binfirst < now + 6 * 86400)
+      if (bins && binfirst && bincount && binfirst < now + 7 * 86400)
       {                         // Show next bin dates
          gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
          //gfx_text (-7, "NEXT BIN");
