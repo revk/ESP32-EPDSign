@@ -687,48 +687,48 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
-      if (bins && binfirst && bincount && binfirst < now + 7 * 86400)
-      {                         // Show next bin dates
-         gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
-         //gfx_text (-7, "NEXT BIN");
-         struct tm tm;
-         localtime_r (&binfirst, &tm);
-         gfx_text (-9, tm.tm_yday == t.tm_yday ? "* TODAY *" : tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+      if (*binsurl)
+      {                         // Lights and bins
          char lights[10],
           *l = lights;
-         gfx_pos (gfx_width () / 2 - bincount * (gfx_width () / BINMAX / 2), gfx_y (), GFX_L | GFX_T | GFX_H);
-         jo_t j = jo_parse_str (bins);
-         jo_type_t t = jo_next (j);     // Start object
-         int count = 0;
-         while (t == JO_TAG && count < bincount)
-         {
-            char tag[20] = "",
-               val[25] = "";
-            jo_strncpy (j, tag, sizeof (tag));
-            t = jo_next (j);
-            jo_strncpy (j, val, sizeof (val));
-            time_t this = parse_time (val);
-            if (this && this == binfirst)
+         if (bins && binfirst && bincount && binfirst < now + 8 * 86400)
+         {                      // Show next bin dates
+            gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
+            //gfx_text (-7, "NEXT BIN");
+            struct tm tm;
+            localtime_r (&binfirst, &tm);
+            gfx_text (-9, tm.tm_yday == t.tm_yday ? "* TODAY *" : tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
+            gfx_pos (gfx_width () / 2 - bincount * (gfx_width () / BINMAX / 2), gfx_y (), GFX_L | GFX_T | GFX_H);
+            jo_t j = jo_parse_str (bins);
+            jo_type_t t = jo_next (j);  // Start object
+            int count = 0;
+            while (t == JO_TAG && count < bincount)
             {
-               char *name = tag;
-               if (*name && name[1] == ':')
+               char tag[20] = "",
+                  val[25] = "";
+               jo_strncpy (j, tag, sizeof (tag));
+               t = jo_next (j);
+               jo_strncpy (j, val, sizeof (val));
+               time_t this = parse_time (val);
+               if (this && this == binfirst)
                {
-                  if (l < lights + sizeof (lights) - 1)
-                     *l++ = *name;
-                  name += 2;
+                  char *name = tag;
+                  if (*name && name[1] == ':')
+                  {
+                     if (l < lights + sizeof (lights) - 1)
+                        *l++ = *name;
+                     name += 2;
+                  }
+                  showicon (name);
+                  count++;
                }
-               showicon (name);
-               count++;
+               t = jo_skip (j);
             }
-            t = jo_skip (j);
+            jo_free (&j);
          }
-         jo_free (&j);
          *l = 0;
-         if (*lights)
-         {
-            showlights (binfirst < now + 86400 ? lights : "K");
-            b.lightoverride = 1;
-         }
+         showlights (*lights && binfirst < now + 86400 ? lights : "K");
+         b.lightoverride = 1;
       }
       if (!image && response)
       {                         // Error
