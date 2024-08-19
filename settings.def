@@ -1,11 +1,11 @@
-gpio	rgb		2				// RGB GPIO
+gpio	rgb		35				// RGB GPIO
 gpio	gfx.ena						// E-paper ENA
-gpio	gfx.mosi	40				// E-paper MOSI
-gpio	gfx.sck		39				// E-paper SCK
-gpio	gfx.cs		38				// E-paper CS
-gpio	gfx.dc		37				// E-paper DC
-gpio	gfx.rst		36				// E-paper RST
-gpio	gfx.busy	35				// E-paper BUSY
+gpio	gfx.mosi	37				// E-paper MOSI
+gpio	gfx.sck		38				// E-paper SCK
+gpio	gfx.cs		39				// E-paper CS
+gpio	gfx.dc		40				// E-paper DC
+gpio	gfx.rst		41				// E-paper RST
+gpio	gfx.busy	42				// E-paper BUSY
 u8	gfx.flip	6				// E-paper Flip
 bit	gfx.invert					// E-paper invert
 u8	startup		10				// Start up message (seconds)
@@ -36,12 +36,12 @@ s	lights		RGB	.live=1			// LEDs pattern
 u16	light.on		.live=1	.place="HHMM"	// Lights on time (HHMM)
 u16	light.off		.live=1	.place="HHMM"	// Lights off time (HHMM)
 
-gpio	sd.ss		3				// MicroSD SS
-gpio	sd.mosi		4				// MicroSD MOSI
-gpio	sd.sck		5				// MicroSD SCK
-gpio	sd.miso		6				// MicroSD MISO
-gpio	sd.cd		-7				// MicroSD CD
+gpio	sd.ss						// MicroSD SS
+gpio	sd.mosi						// MicroSD MOSI
+gpio	sd.sck						// MicroSD SCK
+gpio	sd.miso						// MicroSD MISO
+gpio	sd.cd						// MicroSD CD
 
-gpio	relay		8				// Relay output
+gpio	relay						// Relay output
 
 bit	fb.version		.live=1			// Assumbe SNMP desc is FireBrick, extract version
