@@ -14,6 +14,8 @@ u32	refresh		86400				// Full refresh time (seconds)
 u32	recheck		60	.live=1			// Live check time (seconds)
 u8	fast		3	.live=1			// Use fast updates even for major image change
 u8	show.time		.live=1	.flags="< >_"	// Show clock (size 0-18, and <, >, or _)
+u8	show.host		.live=1	.flags="< >_"	// Show SNMP host (size 0-18, and <, >, or _)
+u8	show.desc		.live=1	.flags="< >_"	// Show SNMP desc (size 0-18, and <, >, or _)
 u8	show.day		.live=1	.flags="< >_"	// Show day (size 0-9, and <, >, or _)
 u8	show.defcon		.live=1 .flags="< >_"	// Show DEFCON level from DEFCON/n messages (size 0-18, and <, >, or _)
 #ifdef	CONFIG_REVK_SOLAR
@@ -23,6 +25,7 @@ u8	show.rise		.live=1 .flags="< >_"	// Show sunrise (size 0-18, and <, >, or _)
 s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	bins.url					// URL to get JSON set of bin colours and dates
+s	icons.url		.live=1			// Base URL for icons (.mono0 extn)
 
 #ifdef	CONFIG_REVK_SOLAR
 s32	pos.lat			.live=1 .decimal=7	// Latitude
@@ -41,3 +44,4 @@ gpio	sd.cd		-7				// MicroSD CD
 
 gpio	relay		8				// Relay output
 
+bit	fb.version		.live=1			// Assumbe SNMP desc is FireBrick, extract version
