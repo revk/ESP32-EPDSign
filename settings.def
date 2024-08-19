@@ -1,5 +1,5 @@
-gpio	rgb		35				// RGB GPIO
-gpio	gfx.ena						// E-paper ENA
+gpio	rgb						// RGB GPIO
+gpio	gfx.ena		-33				// E-paper ENA
 gpio	gfx.mosi	37				// E-paper MOSI
 gpio	gfx.sck		38				// E-paper SCK
 gpio	gfx.cs		39				// E-paper CS
