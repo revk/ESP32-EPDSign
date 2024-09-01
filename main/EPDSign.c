@@ -46,24 +46,20 @@ led_strip_handle_t strip = NULL;
 sdmmc_card_t *card = NULL;
 
 const char *
-gfx_qr (const char *value, int s)
+gfx_qr (const char *value, int max)
 {
 #ifndef	CONFIG_GFX_NONE
    unsigned int width = 0;
- uint8_t *qr = qr_encode (strlen (value), value, widthp: &width, noquiet:1);
+ uint8_t *qr = qr_encode (strlen (value), value, widthp:&width);
    if (!qr)
       return "Failed to encode";
-   int w = gfx_width ();
-   int h = gfx_height ();
-   if (!width || width > w || width > h)
-   {
-      free (qr);
-      return "Too wide";
-   }
-   ESP_LOGD (TAG, "QR %d/%d %d", w, h, s);
+   int s = max / width ? : 1;
    gfx_pos_t ox,
      oy;
-   gfx_draw (width * s, width * s, 0, 0, &ox, &oy);
+   gfx_draw (max, max, 0, 0, &ox, &oy);
+   int d = (max - width * s) / 2;
+   ox += d;
+   oy += d;
    for (int y = 0; y < width; y++)
       for (int x = 0; x < width; x++)
          if (qr[width * y + x] & QR_TAG_BLACK)
@@ -1022,6 +1018,44 @@ app_main ()
          y -= s * 10;
       }
 #endif
+      if (showwifi)
+      {                         // WiFI
+         void qr (int s)
+         {
+            char *qr;
+            if (*pass)
+               asprintf (&qr, "WIFI:S:%s;T:WPA2;P:%s;;", ssid, pass);
+            else
+               asprintf (&qr, "WIFI:S:%s;T:none;;", ssid);
+            if (qr)
+               gfx_qr (qr, s);
+            free (qr);
+         }
+         int s = start (showwifi);
+         // QR
+         if (showwifi & LEFT)
+         {                      // QR on left
+            qr (s * 20);
+            gfx_pos (s * 20, gfx_y (), gfx_a ());
+         } else if (showwifi & RIGHT)
+         {                      // QR on right
+            gfx_pos (gfx_width () - s * 20 - 1, gfx_y (), gfx_a ());
+            qr (s * 20);
+         }
+         // Passphrase
+         gfx_text (-s, pass);
+         y -= s * 10;
+         gfx_pos (gfx_x (), y, gfx_a ());
+         // SSID
+         gfx_text (-s, ssid);
+         y -= s * 10;
+         if (!(showwifi & (LEFT | RIGHT)))
+         {                      // QR on top
+            gfx_pos (gfx_x (), y, gfx_a ());
+            qr (s * 40);
+            y += s * 40;
+         }
+      }
 
       start (0);
       gfx_unlock ();
@@ -1038,6 +1072,12 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Clock size", "showtime");
    revk_web_setting (req, "Reference date", "refdate");
    revk_web_setting (req, "Day size", "showday");
+   revk_web_setting (req, "WiFi size", "showwifi");
+   if (showwifi)
+   {
+      revk_web_setting (req, "SSID", "ssid");
+      revk_web_setting (req, "Passphrase", "pass");
+   }
    revk_web_setting (req, "Light pattern", "lights");
    revk_web_setting (req, "Light on", "lighton");
    revk_web_setting (req, "Light off", "lightoff");

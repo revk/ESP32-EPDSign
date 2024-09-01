@@ -22,6 +22,9 @@ u8	show.defcon		.live=1 .flags="< >_"	// Show DEFCON level from DEFCON/n message
 u8	show.set		.live=1 .flags="< >_"	// Show sunset (size 0-18, and <, >, or _)
 u8	show.rise		.live=1 .flags="< >_"	// Show sunrise (size 0-18, and <, >, or _)
 #endif
+u8	show.wifi		.live=1 .flags="< >_"	// Show WiFi QR code and creds (size 0-18, and <, >, or _)
+s	ssid			.live=1			// WiFi SSID
+s	pass			.live=1			// WiFi Passphrase
 s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	bins.url					// URL to get JSON set of bin colours and dates
