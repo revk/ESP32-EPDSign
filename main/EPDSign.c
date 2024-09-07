@@ -50,7 +50,7 @@ gfx_qr (const char *value, int max)
 {
 #ifndef	CONFIG_GFX_NONE
    unsigned int width = 0;
- uint8_t *qr = qr_encode (strlen (value), value, widthp:&width);
+ uint8_t *qr = qr_encode (strlen (value), value, widthp: &width);
    if (!qr)
       return "Failed to encode";
    int s = max / width ? : 1;
@@ -1018,45 +1018,54 @@ app_main ()
          y -= s * 10;
       }
 #endif
-      if (showwifi)
+      if (showssid || showpass || showqr)
       {                         // WiFI
-         void qr (int s)
-         {
+         int yy = y,
+            h = 0;
+         if (showpass)
+         {                      // Passphrase
+            int s = start (showssid);
+            if (showqr)
+            {
+               if (showpass && LEFT)
+                  gfx_pos (showqr, gfx_y (), gfx_a ());
+               else if (showpass & RIGHT)
+                  gfx_pos (gfx_width () - showqr - 1, gfx_y (), gfx_a ());
+            }
+            gfx_text (-s, pass);
+            y -= s * 10;
+            h += s * 10;
+         }
+         if (showssid)
+         {                      // SSID
+            int s = start (showssid);
+            if (showqr)
+            {
+               if (showssid & LEFT)
+                  gfx_pos (showqr, gfx_y (), gfx_a ());
+               else if (showssid & RIGHT)
+                  gfx_pos (gfx_width () - showqr - 1, gfx_y (), gfx_a ());
+            }
+            gfx_text (-s, ssid);
+            y -= s * 10;
+            h += s * 10;
+         }
+         if (showqr)
+         {                      // QR
+            y = yy;             // Rewind
             char *qr;
             if (*pass)
                asprintf (&qr, "WIFI:S:%s;T:WPA2;P:%s;;", ssid, pass);
             else
                asprintf (&qr, "WIFI:S:%s;T:none;;", ssid);
+            gfx_pos (((showssid | showpass) & LEFT) ? 0 : gfx_width () - 1, y,
+                     GFX_B | (((showssid | showpass) & LEFT) ? GFX_L : GFX_R));
             if (qr)
-               gfx_qr (qr, s);
+               gfx_qr (qr, showqr);
             free (qr);
-         }
-         int s = start (showwifi);
-         // QR
-         if (showwifi & LEFT)
-         {                      // QR on left
-            qr (s * 20);
-            gfx_pos (s * 20, gfx_y (), gfx_a ());
-         } else if (showwifi & RIGHT)
-         {                      // QR on right
-            gfx_pos (gfx_width () - s * 20 - 1, gfx_y (), gfx_a ());
-            qr (s * 20);
-         }
-         // Passphrase
-         gfx_text (-s, pass);
-         y -= s * 10;
-         gfx_pos (gfx_x (), y, gfx_a ());
-         // SSID
-         gfx_text (-s, ssid);
-         y -= s * 10;
-         if (!(showwifi & (LEFT | RIGHT)))
-         {                      // QR on top
-            gfx_pos (gfx_x (), y, gfx_a ());
-            qr (s * 40);
-            y += s * 40;
+            y -= (h > showqr ? h : showqr);
          }
       }
-
       start (0);
       gfx_unlock ();
       if (reshow)
@@ -1072,12 +1081,13 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Clock size", "showtime");
    revk_web_setting (req, "Reference date", "refdate");
    revk_web_setting (req, "Day size", "showday");
-   revk_web_setting (req, "WiFi size", "showwifi");
-   if (showwifi)
-   {
+   revk_web_setting (req, "WiFi QR", "showqr");
+   revk_web_setting (req, "WiFi SSID", "showssid");
+   revk_web_setting (req, "WiFi Pass", "showpass");
+   if (showssid || showqr)
       revk_web_setting (req, "SSID", "ssid");
+   if (showpass || showqr)
       revk_web_setting (req, "Passphrase", "pass");
-   }
    revk_web_setting (req, "Light pattern", "lights");
    revk_web_setting (req, "Light on", "lighton");
    revk_web_setting (req, "Light off", "lightoff");
