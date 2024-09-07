@@ -15,7 +15,7 @@ all:	settings.h
 beta:   
 	-git pull
 	-git submodule update --recursive
-	-git commit -a -m checkpoint
+	-git commit -a
 	@make set
 	cp $(PROJECT_NAME)*.bin betarelease
 	git commit -a -m Beta
@@ -24,7 +24,7 @@ beta:
 issue:
 	-git pull
 	-git submodule update --recursive
-	-git commit -a -m checkpoint
+	-git commit -a
 	@make set
 	cp $(PROJECT_NAME)*.bin betarelease
 	cp $(PROJECT_NAME)*.bin release
@@ -80,5 +80,7 @@ pull:
 	git submodule update --recursive
 
 update:
+	git pull
+	-git commit -a
 	git submodule update --init --recursive --remote
 	-git commit -a -m "Library update"

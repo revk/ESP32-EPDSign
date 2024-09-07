@@ -1024,7 +1024,7 @@ app_main ()
             h = 0;
          if (showpass)
          {                      // Passphrase
-            int s = start (showssid);
+            int s = start (showpass);
             if (showqr)
             {
                if (showpass && LEFT)
