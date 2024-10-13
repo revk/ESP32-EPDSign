@@ -38,8 +38,8 @@ s32	pos.lon			.live=1 .decimal=6	// Longitude
 #endif
 
 s	lights		RGB	.live=1			// LEDs pattern
-u16	light.on		.live=1	.place="HHMM"	// Lights on time (HHMM)
-u16	light.off		.live=1	.place="HHMM"	// Lights off time (HHMM)
+u16	light.on		.live=1	.digits=4 .place="HHMM"	// Lights on time (HHMM)
+u16	light.off		.live=1	.digits=4 .place="HHMM"	// Lights off time (HHMM)
 
 gpio	sd.ss						// MicroSD SS
 gpio	sd.mosi						// MicroSD MOSI
