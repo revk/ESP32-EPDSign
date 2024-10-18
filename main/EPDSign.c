@@ -40,7 +40,7 @@ time_t binfirst = 0;
 uint8_t bincount = 0;
 char *bins = NULL;
 int defcon = -1;                // DEFCON level
-#define	BINMAX	4
+#define	BINMAX	6
 
 led_strip_handle_t strip = NULL;
 sdmmc_card_t *card = NULL;
@@ -402,7 +402,7 @@ showicon (const char *name)
       }
    }
    if (!i)
-      gfx_text (4, "%s ", name);
+      gfx_text (1, "%s ", name);
    else
       gfx_icon2 (gfx_width () / BINMAX, gfx_width () / BINMAX, i->icon);
 }
