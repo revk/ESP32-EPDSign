@@ -80,7 +80,8 @@ pull:
 	git submodule update --recursive
 
 update:
-	git pull
+	-git pull
 	-git commit -a
 	git submodule update --init --recursive --remote
+	idf.py update-dependencies
 	-git commit -a -m "Library update"
