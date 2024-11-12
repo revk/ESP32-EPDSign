@@ -50,7 +50,7 @@ gfx_qr (const char *value, int max)
 {
 #ifndef	CONFIG_GFX_NONE
    unsigned int width = 0;
- uint8_t *qr = qr_encode (strlen (value), value, widthp: &width);
+ uint8_t *qr = qr_encode (strlen (value), value, widthp:&width);
    if (!qr)
       return "Failed to encode";
    int s = max / width ? : 1;
@@ -418,7 +418,7 @@ app_main ()
       led_strip_config_t strip_config = {
          .strip_gpio_num = (rgb.num),
          .max_leds = leds,
-         .led_pixel_format = LED_PIXEL_FORMAT_GRB,      // Pixel format of your LED strip
+         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
          .led_model = LED_MODEL_WS2812, // LED strip model
          .flags.invert_out = rgb.invert,        // whether to invert the output signal(useful when your hardware has a level inverter)
       };
