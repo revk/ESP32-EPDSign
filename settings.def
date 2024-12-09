@@ -1,11 +1,11 @@
 gpio	rgb						// RGB GPIO
-gpio	gfx.ena		-33				// E-paper ENA
-gpio	gfx.mosi	37				// E-paper MOSI
-gpio	gfx.sck		38				// E-paper SCK
-gpio	gfx.cs		39				// E-paper CS
-gpio	gfx.dc		40				// E-paper DC
-gpio	gfx.rst		41				// E-paper RST
-gpio	gfx.busy	42				// E-paper BUSY
+gpio	gfx.ena		33				// E-paper ENA
+gpio	gfx.mosi	39				// E-paper MOSI
+gpio	gfx.sck		40				// E-paper SCK
+gpio	gfx.cs		41				// E-paper CS
+gpio	gfx.dc		42				// E-paper DC
+gpio	gfx.rst		43				// E-paper RST
+gpio	gfx.busy	44				// E-paper BUSY
 u8	gfx.flip	6				// E-paper Flip
 bit	gfx.invert					// E-paper invert
 u8	startup		10				// Start up message (seconds)
@@ -13,7 +13,7 @@ u8	leds		25				// Number of LEDs
 u32	refresh		86400				// Full refresh time (seconds)
 u32	recheck		60	.live=1			// Live check time (seconds)
 u8	fast		3	.live=1			// Use fast updates even for major image change
-u8	show.time		.live=1	.flags="< >_"	// Show clock (size 0-18, and <, >, or _)
+u8	show.time	8	.live=1	.flags="< >_"	// Show clock (size 0-18, and <, >, or _)
 u8	show.host		.live=1	.flags="< >_"	// Show SNMP host (size 0-18, and <, >, or _)
 u8	show.desc		.live=1	.flags="< >_"	// Show SNMP desc (size 0-18, and <, >, or _)
 u8	show.day		.live=1	.flags="< >_"	// Show day (size 0-9, and <, >, or _)
