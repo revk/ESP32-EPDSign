@@ -1,4 +1,4 @@
-#if idefined(CONFIG_GFX_BUILD_SUFFIX_EPD75K) || defined(CONFIG_GFX_BUILD_SUFFIX_EPD75R)
+#if defined(CONFIG_GFX_BUILD_SUFFIX_EPD75K) || defined(CONFIG_GFX_BUILD_SUFFIX_EPD75R)
 
 gpio	rgb		2				// RGB GPIO
 gpio	gfx.ena						// E-paper ENA
