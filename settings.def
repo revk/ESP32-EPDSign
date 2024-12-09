@@ -22,6 +22,11 @@ u8	show.defcon		.live=1 .flags="< >_"	// Show DEFCON level from DEFCON/n message
 u8	show.set		.live=1 .flags="< >_"	// Show sunset (size 0-18, and <, >, or _)
 u8	show.rise		.live=1 .flags="< >_"	// Show sunrise (size 0-18, and <, >, or _)
 #endif
+u8	show.qr			.live=1 		// Show WiFi QR (size)
+u8	show.ssid		.live=1 .flags="< >_"	// Show WiFi SSID (size 0-18, and <, >, or _)
+u8	show.pass		.live=1 .flags="< >_"	// Show WiFi Pass (size 0-18, and <, >, or _)
+s	ssid			.live=1			// WiFi SSID
+s	pass			.live=1			// WiFi Passphrase
 s	refdate			.live=1			// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live=1			// Image URL (include a * for seasonal character)
 s	bins.url					// URL to get JSON set of bin colours and dates
@@ -33,8 +38,8 @@ s32	pos.lon			.live=1 .decimal=6	// Longitude
 #endif
 
 s	lights		RGB	.live=1			// LEDs pattern
-u16	light.on		.live=1	.place="HHMM"	// Lights on time (HHMM)
-u16	light.off		.live=1	.place="HHMM"	// Lights off time (HHMM)
+u16	light.on		.live=1	.digits=4 .place="HHMM"	// Lights on time (HHMM)
+u16	light.off		.live=1	.digits=4 .place="HHMM"	// Lights off time (HHMM)
 
 gpio	sd.ss						// MicroSD SS
 gpio	sd.mosi						// MicroSD MOSI
