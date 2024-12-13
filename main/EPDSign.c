@@ -525,7 +525,7 @@ app_main ()
             char temp[32];
             char *qr1 = NULL,
                *qr2 = NULL;
-            p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+            p += sprintf (p, "[-6]%s/%s/[3]%s %s/", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
             if (sta_netif)
             {
                wifi_ap_record_t ap = {
@@ -534,11 +534,12 @@ app_main ()
                if (*ap.ssid)
                {
                   override = up + startup;
-                  p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
+                  p += sprintf (p, "[3] /[6] WiFi/[-6]%s/[3] /Channel %d/RSSI %d/", (char *) ap.ssid, ap.primary, ap.rssi);
                   {
                      esp_netif_ip_info_t ip;
                      if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
-                        p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+                        p += sprintf (p, "[6] /IPv4/" IPSTR "/", IP2STR (&ip.ip));
+                     asprintf (&qr2, "http://" IPSTR "/", IP2STR (&ip.ip));
                   }
 #ifdef CONFIG_LWIP_IPV6
                   {
@@ -546,7 +547,7 @@ app_main ()
                      int n = esp_netif_get_all_ip6 (sta_netif, ip);
                      if (n)
                      {
-                        p += sprintf (p, "IPv6/[2]");
+                        p += sprintf (p, "[6] /IPv6/[2]");
                         char *q = p;
                         for (int i = 0; i < n; i++)
                            if (n == 1 || ip[i].addr[0] != 0x000080FE)   // Yeh FE80 backwards
@@ -567,7 +568,7 @@ app_main ()
                if (len)
                {
                   override = up + (aptime ? : 600);
-                  p += sprintf (p, "[6]WiFi[-3]%.*s/[6] /", len, temp);
+                  p += sprintf (p, "[3] /[6]WiFi[-3]%.*s/", len, temp);
                   if (*appass)
                      asprintf (&qr1, "WIFI:S:%.*s;T:WPA2;P:%s;;", len, temp, appass);
                   else
@@ -576,7 +577,7 @@ app_main ()
                      esp_netif_ip_info_t ip;
                      if (!esp_netif_get_ip_info (ap_netif, &ip) && ip.ip.addr)
                      {
-                        p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+                        p += sprintf (p, "[6] /IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
                         asprintf (&qr2, "http://" IPSTR "/", IP2STR (&ip.ip));
                      }
                   }
@@ -587,15 +588,18 @@ app_main ()
                ESP_LOGE (TAG, "%s", msg);
                gfx_lock ();
                gfx_message (msg);
+               int max = gfx_height () - gfx_y ();
+               if (max > gfx_width () / 2)
+                  max = gfx_width () / 2;
                if (qr1)
                {
                   gfx_pos (0, gfx_height () - 1, GFX_L | GFX_B);
-                  gfx_qr (qr1, gfx_width () / 2);
+                  gfx_qr (qr1, max);
                }
                if (qr2)
                {
                   gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
-                  gfx_qr (qr2, gfx_width () / 2);
+                  gfx_qr (qr2, max);
                }
                gfx_unlock ();
             }
@@ -726,6 +730,7 @@ app_main ()
             reshow = fast;      // Fast update
          else
             gfx_refresh ();     // New image but not doing the regular clock updates
+         response = 0;
       }
       if (image)
          gfx_load (image);
