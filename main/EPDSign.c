@@ -525,7 +525,7 @@ app_main ()
             char temp[32];
             char *qr1 = NULL,
                *qr2 = NULL;
-            p += sprintf (p, "[-6]%s/%s/[3]%s %s/", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+            p += sprintf (p, "[-6]%.16s/%.16s/[3]%s %s/", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
             if (sta_netif)
             {
                wifi_ap_record_t ap = {
@@ -534,7 +534,7 @@ app_main ()
                if (*ap.ssid)
                {
                   override = up + startup;
-                  p += sprintf (p, "[3] /[6] WiFi/[-6]%s/[3] /Channel %d/RSSI %d/", (char *) ap.ssid, ap.primary, ap.rssi);
+                  p += sprintf (p, "[3] /[6] WiFi/[-6]%.32s/[3] /Channel %d/RSSI %d/", (char *) ap.ssid, ap.primary, ap.rssi);
                   {
                      esp_netif_ip_info_t ip;
                      if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
@@ -549,7 +549,7 @@ app_main ()
                      {
                         p += sprintf (p, "[6] /IPv6/[2]");
                         char *q = p;
-                        for (int i = 0; i < n; i++)
+                        for (int i = 0; i < n && i < 4; i++)
                            if (n == 1 || ip[i].addr[0] != 0x000080FE)   // Yeh FE80 backwards
                               p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
                         while (*q)
