@@ -174,7 +174,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       }
       return "";
    }
-   if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6"))
+   if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6") || !strcmp (suffix, "ap"))
    {
       b.wificonnect = 1;
       return "";
@@ -514,47 +514,65 @@ app_main ()
       if (b.wificonnect)
       {
          b.wificonnect = 0;
-         override = up + startup;
          if (startup)
          {
-            wifi_ap_record_t ap = {
-            };
-            esp_wifi_sta_get_ap_info (&ap);
             char msg[1000];
             char *p = msg;
             char temp[20];
-            p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
-            if (sta_netif && *ap.ssid)
+            if (sta_netif)
             {
-               p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
+               wifi_ap_record_t ap = {
+               };
+               esp_wifi_sta_get_ap_info (&ap);
+               if (*ap.ssid)
                {
-                  esp_netif_ip_info_t ip;
-                  if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
-                     p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
-               }
-#ifdef CONFIG_LWIP_IPV6
-               {
-                  esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
-                  int n = esp_netif_get_all_ip6 (sta_netif, ip);
-                  if (n)
+                  p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+                  p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
                   {
-                     p += sprintf (p, "IPv6/[2]");
-                     char *q = p;
-                     for (int i = 0; i < n; i++)
-                        p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
-                     while (*q)
+                     esp_netif_ip_info_t ip;
+                     if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
+                        p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+                  }
+#ifdef CONFIG_LWIP_IPV6
+                  {
+                     esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
+                     int n = esp_netif_get_all_ip6 (sta_netif, ip);
+                     if (n)
                      {
-                        *q = toupper (*q);
-                        q++;
+                        p += sprintf (p, "IPv6/[2]");
+                        char *q = p;
+                        for (int i = 0; i < n; i++)
+                           p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
+                        while (*q)
+                        {
+                           *q = toupper (*q);
+                           q++;
+                        }
                      }
                   }
-               }
 #endif
+               }
             }
-            ESP_LOGE (TAG, "%s", msg);
-            gfx_lock ();
-            gfx_message (msg);
-            gfx_unlock ();
+            if (p == msg && ap_netif)
+            {
+               char ssid[32];
+               uint8_t len = revk_wifi_is_ap (ssid);
+               if (len)
+               {
+                  p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+                  p += sprintf (p, "[3]%.*s/ /", len, ssid);
+                  // TODO IP
+                  // TODO QRs
+               }
+            }
+            if (p > msg)
+            {
+               override = up + startup;
+               ESP_LOGE (TAG, "%s", msg);
+               gfx_lock ();
+               gfx_message (msg);
+               gfx_unlock ();
+            }
          }
       }
       if (override)
