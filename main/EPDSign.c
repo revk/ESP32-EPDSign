@@ -30,6 +30,7 @@ static struct
    uint8_t wificonnect:1;
    uint8_t redraw:1;
    uint8_t lightoverride:1;
+   uint8_t startup:1;
 } volatile b = { 0 };
 
 volatile uint32_t override = 0;
@@ -174,7 +175,7 @@ app_callback (int client, const char *prefix, const char *target, const char *su
       }
       return "";
    }
-   if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6"))
+   if (!strcmp (suffix, "wifi") || !strcmp (suffix, "ipv6") || !strcmp (suffix, "ap"))
    {
       b.wificonnect = 1;
       return "";
@@ -510,51 +511,100 @@ app_main ()
    {
       usleep (100000);
       time_t now = time (0);
+      if (now < 1000000000)
+         now = 0;
       uint32_t up = uptime ();
       if (b.wificonnect)
       {
+         b.startup = 1;
          b.wificonnect = 0;
-         override = up + startup;
          if (startup)
          {
-            wifi_ap_record_t ap = {
-            };
-            esp_wifi_sta_get_ap_info (&ap);
             char msg[1000];
             char *p = msg;
-            char temp[20];
-            p += sprintf (p, "[-6]%s/%s/[3]%s %s/[6] / /", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
-            if (sta_netif && *ap.ssid)
+            char temp[32];
+            char *qr1 = NULL,
+               *qr2 = NULL;
+            p += sprintf (p, "[-6]%.16s/%.16s/[3]%s %s/", appname, hostname, revk_version, revk_build_date (temp) ? : "?");
+            if (sta_netif)
             {
-               p += sprintf (p, "[6]WiFi/[-6]%s/[6] /Channel %d/RSSI %d/ /", (char *) ap.ssid, ap.primary, ap.rssi);
+               wifi_ap_record_t ap = {
+               };
+               esp_wifi_sta_get_ap_info (&ap);
+               if (*ap.ssid)
                {
-                  esp_netif_ip_info_t ip;
-                  if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
-                     p += sprintf (p, "IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
-               }
-#ifdef CONFIG_LWIP_IPV6
-               {
-                  esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
-                  int n = esp_netif_get_all_ip6 (sta_netif, ip);
-                  if (n)
+                  override = up + startup;
+                  p += sprintf (p, "[3] /[6] WiFi/[-6]%.32s/[3] /Channel %d/RSSI %d/", (char *) ap.ssid, ap.primary, ap.rssi);
                   {
-                     p += sprintf (p, "IPv6/[2]");
-                     char *q = p;
-                     for (int i = 0; i < n; i++)
-                        p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
-                     while (*q)
+                     esp_netif_ip_info_t ip;
+                     if (!esp_netif_get_ip_info (sta_netif, &ip) && ip.ip.addr)
+                        p += sprintf (p, "[6] /IPv4/" IPSTR "/", IP2STR (&ip.ip));
+                     asprintf (&qr2, "http://" IPSTR "/", IP2STR (&ip.ip));
+                  }
+#ifdef CONFIG_LWIP_IPV6
+                  {
+                     esp_ip6_addr_t ip[LWIP_IPV6_NUM_ADDRESSES];
+                     int n = esp_netif_get_all_ip6 (sta_netif, ip);
+                     if (n)
                      {
-                        *q = toupper (*q);
-                        q++;
+                        p += sprintf (p, "[6] /IPv6/[2]");
+                        char *q = p;
+                        for (int i = 0; i < n && i < 4; i++)
+                           if (n == 1 || ip[i].addr[0] != 0x000080FE)   // Yeh FE80 backwards
+                              p += sprintf (p, IPV6STR "/", IPV62STR (ip[i]));
+                        while (*q)
+                        {
+                           *q = toupper (*q);
+                           q++;
+                        }
+                     }
+                  }
+#endif
+               }
+            }
+            if (!override && ap_netif)
+            {
+               uint8_t len = revk_wifi_is_ap (temp);
+               if (len)
+               {
+                  override = up + (aptime ? : 600);
+                  p += sprintf (p, "[3] /[6]WiFi[-3]%.*s/", len, temp);
+                  if (*appass)
+                     asprintf (&qr1, "WIFI:S:%.*s;T:WPA2;P:%s;;", len, temp, appass);
+                  else
+                     asprintf (&qr1, "WIFI:S:%.*s;;", len, temp);
+                  {
+                     esp_netif_ip_info_t ip;
+                     if (!esp_netif_get_ip_info (ap_netif, &ip) && ip.ip.addr)
+                     {
+                        p += sprintf (p, "[6] /IPv4/" IPSTR "/ /", IP2STR (&ip.ip));
+                        asprintf (&qr2, "http://" IPSTR "/", IP2STR (&ip.ip));
                      }
                   }
                }
-#endif
             }
-            ESP_LOGE (TAG, "%s", msg);
-            gfx_lock ();
-            gfx_message (msg);
-            gfx_unlock ();
+            if (override)
+            {
+               ESP_LOGE (TAG, "%s", msg);
+               gfx_lock ();
+               gfx_message (msg);
+               int max = gfx_height () - gfx_y ();
+               if (max > gfx_width () / 2)
+                  max = gfx_width () / 2;
+               if (qr1)
+               {
+                  gfx_pos (0, gfx_height () - 1, GFX_L | GFX_B);
+                  gfx_qr (qr1, max);
+               }
+               if (qr2)
+               {
+                  gfx_pos (gfx_width () - 1, gfx_height () - 1, GFX_R | GFX_B);
+                  gfx_qr (qr2, max);
+               }
+               gfx_unlock ();
+            }
+            free (qr1);
+            free (qr2);
          }
       }
       if (override)
@@ -564,7 +614,7 @@ app_main ()
          else
             continue;
       }
-      if (now / 60 == min && !b.redraw)
+      if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
       min = now / 60;
       struct tm t;
@@ -680,6 +730,7 @@ app_main ()
             reshow = fast;      // Fast update
          else
             gfx_refresh ();     // New image but not doing the regular clock updates
+         response = 0;
       }
       if (image)
          gfx_load (image);
@@ -728,7 +779,7 @@ app_main ()
          showlights (*lights && binfirst < now + 86400 ? lights : "K");
          b.lightoverride = 1;
       }
-      if (!image && response)
+      if (!image && response > 0)
       {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
          gfx_7seg (9, "%d", response);
@@ -1002,6 +1053,8 @@ app_main ()
          int s = start (showset);
          time_t when = sun_set (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale,
                                 (double) poslon / poslon_scale, SUN_DEFAULT);
+         if (!now)
+            when = 0;
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
@@ -1012,6 +1065,8 @@ app_main ()
          int s = start (showrise);
          time_t when = sun_rise (t.tm_year + 1900, t.tm_mon + 1, t.tm_mday, (double) poslat / poslat_scale,
                                  (double) poslon / poslon_scale, SUN_DEFAULT);
+         if (!now)
+            when = 0;
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
          gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
@@ -1057,7 +1112,7 @@ app_main ()
             if (*pass)
                asprintf (&qr, "WIFI:S:%s;T:WPA2;P:%s;;", ssid, pass);
             else
-               asprintf (&qr, "WIFI:S:%s;T:none;;", ssid);
+               asprintf (&qr, "WIFI:S:%s;;", ssid);
             gfx_pos (((showssid | showpass) & LEFT) ? 0 : gfx_width () - 1, y,
                      GFX_B | (((showssid | showpass) & LEFT) ? GFX_L : GFX_R));
             if (qr)
