@@ -1,6 +1,13 @@
-<img src=Example.jpg width=33% align=right>
+# Latest board design
+
+As manufacturer, I name this board: ESP32-S3 Waveshare e-paper driver for 7.5" e-paper panel (esphome compatible)
+
+[that bit is for Amazon!]
+
+![81eJIKIMeVL _AC_SL1500_](https://github.com/user-attachments/assets/aa4ad289-c8ab-4222-b5fc-73f60279ed5c)
 
 # ESP32-EPDSign
+<img src=Example.jpg width=33% align=right>
 
 This is a general purpose e-paper sign module. It also allows for modules with WS2812 RGB LEDs (e.g. [7.5" Waveshare driver](https://www.amazon.co.uk/dp/B0CPYJ19NM)).
 
