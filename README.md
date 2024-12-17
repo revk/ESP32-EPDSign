@@ -1,10 +1,11 @@
-# Latest board design
+# Amazon
 
-As manufacturer, I name this board: ESP32-S3 Waveshare e-paper driver for 7.5" e-paper panel (esphome compatible)
+This part if for Amazon - as this is the *manufacturers web site* and so used as proof of title and list price. It is also links to where you can buy.
 
-[that bit is for Amazon!]
-
-![81eJIKIMeVL _AC_SL1500_](https://github.com/user-attachments/assets/aa4ad289-c8ab-4222-b5fc-73f60279ed5c)
+|ASIN|List price|Title|
+|-----|----|----|
+|[B0CQ8Y292Y](https://www.amazon.co.uk/dp/B0CQ8Y292Y)|£30.00|ESP32-S3 Waveshare e-paper driver with battery circuit|
+|[B0CPYJ19NM](https://www.amazon.co.uk/dp/B0CPYJ19NM)|£35.00|ESP32-S3 Waveshare e-paper driver for 7.5" E-paper panel (esphome compatible)|
 
 # ESP32-EPDSign
 <img src=Example.jpg width=33% align=right>
