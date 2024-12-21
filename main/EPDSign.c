@@ -834,158 +834,168 @@ app_main ()
                secs = s;
             } else
             {                   // Try uptime as hostname
-               struct sockaddr_in6 dest_addr = { 0 };
-               inet6_aton (refdate, &dest_addr.sin6_addr);
-               dest_addr.sin6_family = AF_INET6;
-               dest_addr.sin6_port = htons (161);
-               //dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
-               int sock = socket (AF_INET6, SOCK_DGRAM, IPPROTO_IPV6);
-               if (sock < 0)
-                  ESP_LOGE (TAG, "SNMP sock failed %s", refdate);
-               else
-               {                // very crude IPv6 SNMP uptime .1.3.6.1.2.1.1.3.0
-                  uint8_t payload[] = { // iso.3.6.1.2.1.1.3.0 iso.3.6.1.2.1.1.5.0 iso.3.6.1.2.1.1.1.0
-                     0x30, 0x45, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x38, 0x02,
-                     0x04, 0x00, 0x00, 0x00, 0x0, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x2a, 0x30, 0x0c, 0x06,
-                     0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x05, 0x00, 0x30, 0x0c, 0x06, 0x08, 0x2b,
-                     0x06, 0x01, 0x02, 0x01, 0x01, 0x05, 0x00, 0x05, 0x00, 0x30, 0x0c, 0x06, 0x08, 0x2b, 0x06, 0x01,
-                     0x02, 0x01, 0x01, 0x01, 0x00, 0x05, 0x00
-                  };
-                  uint32_t id = ((esp_random () & 0x7FFFFF7F) | 0x40000040);    // bodge to ensure 4 bytes
-                  *(uint32_t *) (payload + 17) = id;
-                  int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
-                  if (err < 0)
-                     ESP_LOGE (TAG, "SNMP Tx failed");
+               for (int try = 0; try < 3; try++)
+               {
+                  struct sockaddr_in6 dest_addr = { 0 };
+                  inet6_aton (refdate, &dest_addr.sin6_addr);
+                  dest_addr.sin6_family = AF_INET6;
+                  dest_addr.sin6_port = htons (161);
+                  //dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
+                  int sock = socket (AF_INET6, SOCK_DGRAM, IPPROTO_IPV6);
+                  if (sock < 0)
+                     ESP_LOGE (TAG, "SNMP sock failed %s", refdate);
                   else
                   {
-                     struct timeval timeout;
-                     timeout.tv_sec = 1;
-                     timeout.tv_usec = 0;
-                     setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
-                     uint8_t rx[300];
-                     struct sockaddr_storage source_addr;
-                     socklen_t socklen = sizeof (source_addr);
-                     int len = recvfrom (sock, rx, sizeof (rx), 0, (struct sockaddr *) &source_addr, &socklen);
-                     uint8_t *oid = NULL,
-                        oidlen = 0,
-                        resp = 0;
-                     uint8_t *scan (uint8_t * p, uint8_t * e)
+                     // very crude IPv6 SNMP uptime .1.3.6.1.2.1.1.3.0
+                     uint8_t payload[] = {      // iso.3.6.1.2.1.1.3.0 iso.3.6.1.2.1.1.5.0 iso.3.6.1.2.1.1.1.0
+                        0x30, 0x45, 0x02, 0x01, 0x01, 0x04, 0x06, 0x70, 0x75, 0x62, 0x6c, 0x69, 0x63, 0xa0, 0x38, 0x02,
+                        0x04, 0x00, 0x00, 0x00, 0x0, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00, 0x30, 0x2a, 0x30, 0x0c, 0x06,
+                        0x08, 0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x03, 0x00, 0x05, 0x00, 0x30, 0x0c, 0x06, 0x08, 0x2b,
+                        0x06, 0x01, 0x02, 0x01, 0x01, 0x05, 0x00, 0x05, 0x00, 0x30, 0x0c, 0x06, 0x08, 0x2b, 0x06, 0x01,
+                        0x02, 0x01, 0x01, 0x01, 0x00, 0x05, 0x00
+                     };
+                     uint32_t id = ((esp_random () & 0x7FFFFF7F) | 0x40000040); // bodge to ensure 4 bytes
+                     *(uint32_t *) (payload + 17) = id;
+                     int err = sendto (sock, payload, sizeof (payload), 0, (struct sockaddr *) &dest_addr, sizeof (dest_addr));
+                     if (err < 0)
+                        ESP_LOGE (TAG, "SNMP Tx failed");
+                     else
                      {
-                        if (p >= e)
-                           return NULL;
-                        uint8_t class = (*p >> 6);
-                        uint8_t con = (*p & 0x20);
-                        uint32_t tag = 0;
-                        if ((*p & 0x1F) != 0x1F)
-                           tag = (*p & 0x1F);
-                        else
+                        struct timeval timeout;
+                        timeout.tv_sec = 1;
+                        timeout.tv_usec = 0;
+                        setsockopt (sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+                        uint8_t rx[300];
+                        struct sockaddr_storage source_addr;
+                        socklen_t socklen = sizeof (source_addr);
+                        uint64_t a = esp_timer_get_time ();
+                        int len = recvfrom (sock, rx, sizeof (rx), 0, (struct sockaddr *) &source_addr, &socklen);
+                        uint64_t b = esp_timer_get_time ();
+                        ESP_LOGE (TAG, "SNMP len %d (%llums)", len, (b - a) / 1000ULL);
+                        uint8_t *oid = NULL,
+                           oidlen = 0,
+                           resp = 0;
+                        uint8_t *scan (uint8_t * p, uint8_t * e)
                         {
-                           do
+                           if (p >= e)
+                              return NULL;
+                           uint8_t class = (*p >> 6);
+                           uint8_t con = (*p & 0x20);
+                           uint32_t tag = 0;
+                           if ((*p & 0x1F) != 0x1F)
+                              tag = (*p & 0x1F);
+                           else
                            {
-                              p++;
-                              tag = (tag << 7) | (*p & 0x7F);
-                           }
-                           while (*p & 0x80);
-                        }
-                        p++;
-                        if (p >= e)
-                           return NULL;
-                        uint32_t len = 0;
-                        if (*p & 0x80)
-                        {
-                           uint8_t b = (*p++ & 0x7F);
-                           while (b--)
-                              len = (len << 8) + (*p++);
-                        } else
-                           len = (*p++ & 0x7F);
-                        if (p + len > e)
-                           return NULL;
-                        if (con)
-                        {
-                           if (tag == 2)
-                              resp = 1;
-                           while (p && p < e)
-                              p = scan (p, e);
-                           oidlen = 0;
-                        } else
-                        {
-                           int32_t n = 0;
-                           uint8_t *d = p;
-                           uint8_t *de = p + len;
-                           if (!class && tag == 6)
-                           {
-                              oid = p;
-                              oidlen = len;
-                           }
-                           if ((!class && tag == 2) || (class == 1 && tag == 3))
-                           {    // Int or timeticks
-                              int s = 1;
-                              if (*d & 0x80)
-                                 s = -1;
-                              n = (*d++ & 0x7F);
-                              while (d < de)
-                                 n = (n << 8) + *d++;
-                              n *= s;
-                           }
-                           if (class == 2 && tag == 1 && resp)
-                           {    // Response ID (first number in con tag 2)
-                              resp = 0;
-                              if (n != id)
+                              do
                               {
-                                 ESP_LOGE (TAG, "SNMP Bad ID %08lX expecting %08lX", n, id);
-                                 return NULL;
+                                 p++;
+                                 tag = (tag << 7) | (*p & 0x7F);
                               }
-                           } else if (class == 1 && tag == 3 && oidlen == 8 && !memcmp (oid, (uint8_t[])
-                                                                                        {
-                                                                                        0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x03,
-                                                                                        0x00}
-                                                                                        , 8))
-                              secs = n / 100;   // Uptime
-                           else if (!class && tag == 4 && oidlen == 8 && !memcmp (oid, (uint8_t[])
-                                                                                  {
-                                                                                  0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x05, 0x00}
-                                                                                  , 8))
+                              while (*p & 0x80);
+                           }
+                           p++;
+                           if (p >= e)
+                              return NULL;
+                           uint32_t len = 0;
+                           if (*p & 0x80)
                            {
-                              if (len > sizeof (snmphost) - 1)
-                                 len = sizeof (snmphost) - 1;
-                              memcpy (snmphost, d, len);
-                              snmphost[len] = 0;
-                           } else if (!class && tag == 4 && oidlen == 8 && !memcmp (oid, (uint8_t[])
-                                                                                    {
-                                                                                    0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00}
-                                                                                    , 8))
+                              uint8_t b = (*p++ & 0x7F);
+                              while (b--)
+                                 len = (len << 8) + (*p++);
+                           } else
+                              len = (*p++ & 0x7F);
+                           if (p + len > e)
+                              return NULL;
+                           if (con)
                            {
-                              if (fbversion)
+                              if (tag == 2)
+                                 resp = 1;
+                              while (p && p < e)
+                                 p = scan (p, e);
+                              oidlen = 0;
+                           } else
+                           {
+                              int32_t n = 0;
+                              uint8_t *d = p;
+                              uint8_t *de = p + len;
+                              if (!class && tag == 6)
                               {
-                                 uint8_t *v = d;
-                                 while (v + 1 < de && *v != '(')
-                                    v++;
-                                 if (v < de)
+                                 oid = p;
+                                 oidlen = len;
+                              }
+                              if ((!class && tag == 2) || (class == 1 && tag == 3))
+                              { // Int or timeticks
+                                 int s = 1;
+                                 if (*d & 0x80)
+                                    s = -1;
+                                 n = (*d++ & 0x7F);
+                                 while (d < de)
+                                    n = (n << 8) + *d++;
+                                 n *= s;
+                              }
+                              if (class == 2 && tag == 1 && resp)
+                              { // Response ID (first number in con tag 2)
+                                 resp = 0;
+                                 if (n != id)
                                  {
-                                    v++;
-                                    uint8_t *q = v;
-                                    while (q < de && *q != ')' && *q != ' ')
-                                       q++;
-                                    if (q > v)
+                                    ESP_LOGE (TAG, "SNMP Bad ID %08lX expecting %08lX", n, id);
+                                    return NULL;
+                                 }
+                              } else if (class == 1 && tag == 3 && oidlen == 8 && !memcmp (oid, (uint8_t[])
+                                                                                           {
+                                                                                           0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x03,
+                                                                                           0x00}
+                                                                                           , 8))
+                                 secs = n / 100;        // Uptime
+                              else if (!class && tag == 4 && oidlen == 8 && !memcmp (oid, (uint8_t[])
+                                                                                     {
+                                                                                     0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x05, 0x00}
+                                                                                     , 8))
+                              {
+                                 if (len > sizeof (snmphost) - 1)
+                                    len = sizeof (snmphost) - 1;
+                                 memcpy (snmphost, d, len);
+                                 snmphost[len] = 0;
+                              } else if (!class && tag == 4 && oidlen == 8 && !memcmp (oid, (uint8_t[])
+                                                                                       {
+                                                                                       0x2b, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01,
+                                                                                       0x00}
+                                                                                       , 8))
+                              {
+                                 if (fbversion)
+                                 {
+                                    uint8_t *v = d;
+                                    while (v + 1 < de && *v != '(')
+                                       v++;
+                                    if (v < de)
                                     {
-                                       d = v;
-                                       len = q - v;
+                                       v++;
+                                       uint8_t *q = v;
+                                       while (q < de && *q != ')' && *q != ' ')
+                                          q++;
+                                       if (q > v)
+                                       {
+                                          d = v;
+                                          len = q - v;
+                                       }
                                     }
                                  }
+                                 if (len > sizeof (snmpdesc) - 1)
+                                    len = sizeof (snmpdesc) - 1;
+                                 memcpy (snmpdesc, d, len);
+                                 snmpdesc[len] = 0;
                               }
-                              if (len > sizeof (snmpdesc) - 1)
-                                 len = sizeof (snmpdesc) - 1;
-                              memcpy (snmpdesc, d, len);
-                              snmpdesc[len] = 0;
+                              p = de;
                            }
-                           p = de;
+                           return p;
                         }
-                        return p;
+                        if (len > 0)
+                           scan (rx, rx + len);
                      }
-                     if (len > 0)
-                        scan (rx, rx + len);
+                     close (sock);
                   }
-                  close (sock);
+                  if (secs)
+                     break;     // Got reply
                }
             }
             // Show days, 4 sig fig
