@@ -55,7 +55,11 @@ gfx_qr (const char *value, int max)
  uint8_t *qr = qr_encode (strlen (value), value, widthp:&width);
    if (!qr)
       return "Failed to encode";
-   int s = max / width ? : 1;
+   if (max < width)
+      return "No space";
+   if (max > gfx_width () || max > gfx_height ())
+      return "Too big";
+   int s = max / width;
    gfx_pos_t ox,
      oy;
    gfx_draw (max, max, 0, 0, &ox, &oy);
