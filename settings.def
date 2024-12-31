@@ -9,12 +9,6 @@ gpio	gfx.dc		37				// E-paper DC
 gpio	gfx.rst		36				// E-paper RST
 gpio	gfx.busy	35				// E-paper BUSY
 
-gpio	sd.ss		3				// MicroSD SS
-gpio	sd.mosi		4				// MicroSD MOSI
-gpio	sd.sck		5				// MicroSD SCK
-gpio	sd.miso		6				// MicroSD MISO
-gpio	sd.cd		7				// MicroSD CD
-
 gpio	relay		8				// Relay output
 
 #else
@@ -28,15 +22,17 @@ gpio	gfx.dc		40				// E-paper DC
 gpio	gfx.rst		41				// E-paper RST
 gpio	gfx.busy	42				// E-paper BUSY
 
-gpio	sd.ss						// MicroSD SS
-gpio	sd.mosi						// MicroSD MOSI
-gpio	sd.sck						// MicroSD SCK
-gpio	sd.miso						// MicroSD MISO
-gpio	sd.cd						// MicroSD CD
-
 gpio	relay						// Relay output
 
 #endif
+
+gpio    sd.dat2                         // MicroSD DAT2
+gpio    sd.dat3         .old="sdss"     // MicroSD DAT3
+gpio    sd.cmd          .old="sdmosi"   // MicroSD CMD
+gpio    sd.clk          .old="sdsck"    // MicroSD CLK
+gpio    sd.dat0         .old="sdmiso"   // MicroSD DAT0
+gpio    sd.dat1                         // MicroSD DAT1
+gpio    sd.cd                           // MicroSD CD
 
 u8	gfx.flip	6				// E-paper Flip
 bit	gfx.invert					// E-paper invert

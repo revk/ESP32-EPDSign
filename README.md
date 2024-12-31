@@ -1,6 +1,19 @@
-<img src=Example.jpg width=33% align=right>
+# Amazon
+
+This part if for Amazon - as this is the *manufacturers web site* and so used as proof of title and list price. It is also links to where you can buy.
+
+|ASIN|List price|Title|
+|-----|----|----|
+|[B0CQ8Y292Y](https://www.amazon.co.uk/dp/B0CQ8Y292Y)|£30.00|ESP32-S3 Waveshare e-paper driver with battery circuit|
+|[B0CPYJ19NM](https://www.amazon.co.uk/dp/B0CPYJ19NM)|£35.00|ESP32-S3 Waveshare e-paper driver for 7.5" E-paper panel (esphome compatible)|
+
+## Trademark
+
+This is an open source project, but bear in mind you cannot sell boards bearing the Andrews & Arnold Ltd name, the A&A logo, the registered trademark AJK logo, or the GS1 allocated EANs assigned to Andrews & Arnold Ltd.
 
 # ESP32-EPDSign
+
+<img src=Example.jpg width=33% align=right>
 
 This is a general purpose e-paper sign module. It also allows for modules with WS2812 RGB LEDs (e.g. [7.5" Waveshare driver](https://www.amazon.co.uk/dp/B0CPYJ19NM)).
 
