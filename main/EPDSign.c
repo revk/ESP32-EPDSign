@@ -1134,22 +1134,33 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   revk_web_setting_info (req, "Background image");
+   revk_web_setting_info (req, "Background image should be 1 bit per pixel raw data for the image.");
    revk_web_setting (req, "Image Base URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
-   revk_web_setting_info (req, "Overlay widgets");
-   revk_web_setting (req, "Clock size", "showtime");
-   revk_web_setting (req, "Reference date", "refdate");
-   revk_web_setting (req, "Day size", "showday");
-   revk_web_setting (req, "WiFi QR", "showqr");
-   revk_web_setting (req, "WiFi SSID", "showssid");
-   revk_web_setting (req, "WiFi Pass", "showpass");
-   if (showssid || showqr)
-      revk_web_setting (req, "SSID", "ssid");
-   if (showpass || showqr)
-      revk_web_setting (req, "Passphrase", "pass");
+   revk_web_setting (req, "Image invert", "gfxinvert");
    revk_web_setting (req, "Light pattern", "lights");
    revk_web_setting (req, "Light on", "lighton");
    revk_web_setting (req, "Light off", "lightoff");
-   revk_web_setting (req, "Image invert", "gfxinvert");
+   revk_web_setting_info (req, "Overlay widgets");
+   revk_web_setting (req, "Bins (top of display)", "binsurl");
+   if (*binsurl)
+      revk_web_setting (req, "Icons", "iconsurl");
+   revk_web_setting (req, "WiFi SSID", "ssid");
+   revk_web_setting (req, "WiFi Pass", "pass");
+   if (*ssid)
+   {
+      revk_web_setting (req, "WiFi QR", "showqr");
+      revk_web_setting (req, "WiFi SSID", "showssid");
+      revk_web_setting (req, "WiFi Pass", "showpass");
+   }
+   revk_web_setting (req, "Sunset", "showset");
+   revk_web_setting (req, "Sunrise", "showrise");
+   if (showset || showrise)
+   {
+      revk_web_setting (req, "Location", "poslat");
+      revk_web_setting (req, "Location", "poslon");
+   }
+   revk_web_setting (req, "Day size", "showday");
+   revk_web_setting (req, "Reference date", "refdate");
+   revk_web_setting (req, "Clock size", "showtime");
 }
