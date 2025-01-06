@@ -1134,6 +1134,7 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
+
    revk_web_setting (req, "Image Base URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
    revk_web_setting (req, "Clock size", "showtime");
