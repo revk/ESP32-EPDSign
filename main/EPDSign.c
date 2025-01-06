@@ -1156,10 +1156,10 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Bins (top of display)", "binsurl");
    if (*binsurl)
       revk_web_setting (req, "Icons", "iconsurl");
-   revk_web_setting (req, "WiFi SSID", "showssid");
+   revk_web_setting (req, "WiFi SSID size", "showssid");
    if (showssid)
    {
-      revk_web_setting (req, "WiFi Pass", "showpass");
+      revk_web_setting (req, "WiFi Pass size", "showpass");
       revk_web_setting (req, "WiFi SSID", "ssid");
       revk_web_setting (req, "WiFi Pass", "pass");
       revk_web_setting (req, "WiFi QR", "showqr");
