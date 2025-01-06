@@ -1153,7 +1153,7 @@ revk_web_extra (httpd_req_t * req)
    }
    revk_web_setting_title (req, "Overlay widgets");
    revk_web_setting_info (req,
-                          "Sizes are based pixel text size and can include <tt>&lt;</tt> and <tt>&rt;</tt> fort alignment, and <tt>_</tt> to add separation line.");
+                          "Sizes are based pixel text size and can include <tt>&lt;</tt> and <tt>&gt;</tt> for alignment, and <tt>_</tt> to add separation line.");
    revk_web_setting (req, "Bins (top of display)", "binsurl");
    if (*binsurl)
       revk_web_setting (req, "Icons", "iconsurl");
