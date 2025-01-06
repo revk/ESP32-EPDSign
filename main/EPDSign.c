@@ -1136,7 +1136,8 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   revk_web_setting_info (req,
+   revk_web_setting_title (req, "Main image settings");
+   revk_web_setting_note (req,
                           "Background image should be 1 bit per pixel raw data for the image. See <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
    revk_web_setting (req, "Startup", "startup");
    revk_web_setting (req, "Recheck", "recheck");
@@ -1145,12 +1146,14 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Image invert", "gfxinvert");
    if (rgb.set && leds > 1)
    {
-      revk_web_setting_info (req, "LEDs");
+      revk_web_setting_title (req, "LEDs");
       revk_web_setting (req, "Light pattern", "lights");
       revk_web_setting (req, "Light on", "lighton");
       revk_web_setting (req, "Light off", "lightoff");
    }
-   revk_web_setting_info (req, "Overlay widgets (sizes are based pixel text size and can include <tt>&lt;</tt> and <tt>&rt;</tt> fort alignment, and <tt>_</tt> to add separation line.");
+   revk_web_setting_title (req, "Overlay widgets");
+   revk_web_setting_info (req,
+                          "Sizes are based pixel text size and can include <tt>&lt;</tt> and <tt>&rt;</tt> fort alignment, and <tt>_</tt> to add separation line.");
    revk_web_setting (req, "Bins (top of display)", "binsurl");
    if (*binsurl)
       revk_web_setting (req, "Icons", "iconsurl");
