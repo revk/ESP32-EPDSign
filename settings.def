@@ -61,8 +61,8 @@ s	bins.url					// URL to get JSON set of bin colours and dates
 s	icons.url		.live=1			// Base URL for icons (.mono0 extn)
 
 #ifdef	CONFIG_REVK_SOLAR
-s32	pos.lat			.live=1 .decimal=7	// Latitude
-s32	pos.lon			.live=1 .decimal=6	// Longitude
+s32	pos.lat			.live=1 .decimal=7 .unit="°N"	// Latitude
+s32	pos.lon			.live=1 .decimal=6 .unit="°E"	// Longitude
 #endif
 
 s	lights		RGB	.live=1			// LEDs pattern (colour letters)
