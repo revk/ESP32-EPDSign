@@ -1138,10 +1138,9 @@ revk_web_extra (httpd_req_t * req)
 {
    revk_web_setting_title (req, "Main image settings");
    revk_web_setting_info (req,
-                          "Background image should be 1 bit per pixel raw data for the image. See <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
+                          "Background image at URL should be 1 bit per pixel raw data for the image. See <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
    revk_web_setting (req, "Startup", "startup");
-   revk_web_setting (req, "Recheck", "recheck");
-   revk_web_setting (req, "Image Base URL", "imageurl");
+   revk_web_setting (req, "Image URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
    revk_web_setting (req, "Image invert", "gfxinvert");
    if (rgb.set && leds > 1)
