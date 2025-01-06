@@ -1137,7 +1137,7 @@ void
 revk_web_extra (httpd_req_t * req)
 {
    revk_web_setting_title (req, "Main image settings");
-   revk_web_setting_note (req,
+   revk_web_setting_info (req,
                           "Background image should be 1 bit per pixel raw data for the image. See <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
    revk_web_setting (req, "Startup", "startup");
    revk_web_setting (req, "Recheck", "recheck");
