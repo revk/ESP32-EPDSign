@@ -1134,13 +1134,17 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   revk_web_setting_info (req, "Background image should be 1 bit per pixel raw data for the image.");
+   revk_web_setting_info (req, "Background image should be 1 bit per pixel raw data for the image. Include a <tt>*</tt> in URL for <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
    revk_web_setting (req, "Image Base URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
    revk_web_setting (req, "Image invert", "gfxinvert");
-   revk_web_setting (req, "Light pattern", "lights");
-   revk_web_setting (req, "Light on", "lighton");
-   revk_web_setting (req, "Light off", "lightoff");
+   if (rgb.set)
+   {
+      revk_web_setting_info (req, "LEDs");
+      revk_web_setting (req, "Light pattern", "lights");
+      revk_web_setting (req, "Light on", "lighton");
+      revk_web_setting (req, "Light off", "lightoff");
+   }
    revk_web_setting_info (req, "Overlay widgets");
    revk_web_setting (req, "Bins (top of display)", "binsurl");
    if (*binsurl)
@@ -1153,6 +1157,7 @@ revk_web_extra (httpd_req_t * req)
       revk_web_setting (req, "WiFi SSID", "showssid");
       revk_web_setting (req, "WiFi Pass", "showpass");
    }
+
    revk_web_setting (req, "Sunset", "showset");
    revk_web_setting (req, "Sunrise", "showrise");
    if (showset || showrise)
@@ -1163,4 +1168,6 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting (req, "Day size", "showday");
    revk_web_setting (req, "Reference date", "refdate");
    revk_web_setting (req, "Clock size", "showtime");
+   if (showtime)
+      revk_web_setting (req, "Countdown", "refdate");
 }
