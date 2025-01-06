@@ -1134,9 +1134,10 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-
+   revk_web_setting_info (req, "Background image");
    revk_web_setting (req, "Image Base URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
+   revk_web_setting_info (req, "Overlay widgets");
    revk_web_setting (req, "Clock size", "showtime");
    revk_web_setting (req, "Reference date", "refdate");
    revk_web_setting (req, "Day size", "showday");
