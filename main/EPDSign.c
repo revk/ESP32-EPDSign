@@ -1080,6 +1080,8 @@ app_main ()
       {                         // WiFI
          int yy = y,
             h = 0;
+         const char *thisssid = *ssid ? ssid : wifissid;
+         const char *thispass = *ssid ? pass : wifipass;
          if (showpass)
          {                      // Passphrase
             int s = start (showpass);
@@ -1090,7 +1092,7 @@ app_main ()
                else if (showpass & RIGHT)
                   gfx_pos (gfx_width () - showqr - 1, gfx_y (), gfx_a ());
             }
-            gfx_text (-s, pass);
+            gfx_text (-s, thispass);
             y -= s * 10;
             h += s * 10;
          }
@@ -1104,7 +1106,7 @@ app_main ()
                else if (showssid & RIGHT)
                   gfx_pos (gfx_width () - showqr - 1, gfx_y (), gfx_a ());
             }
-            gfx_text (-s, ssid);
+            gfx_text (-s, thisssid);
             y -= s * 10;
             h += s * 10;
          }
@@ -1113,9 +1115,9 @@ app_main ()
             y = yy;             // Rewind
             char *qr;
             if (*pass)
-               asprintf (&qr, "WIFI:S:%s;T:WPA2;P:%s;;", ssid, pass);
+               asprintf (&qr, "WIFI:S:%s;T:WPA2;P:%s;;", thisssid, thispass);
             else
-               asprintf (&qr, "WIFI:S:%s;;", ssid);
+               asprintf (&qr, "WIFI:S:%s;;", thisssid);
             gfx_pos (((showssid | showpass) & LEFT) ? 0 : gfx_width () - 1, y,
                      GFX_B | (((showssid | showpass) & LEFT) ? GFX_L : GFX_R));
             if (qr)
@@ -1134,20 +1136,52 @@ app_main ()
 void
 revk_web_extra (httpd_req_t * req)
 {
-   revk_web_setting (req, "Image Base URL", "imageurl");
+   revk_web_setting_title (req, "Main image settings");
+   revk_web_setting_info (req,
+                          "Background image at URL should be 1 bit per pixel raw data for the image. See <a href='https://github.com/revk/ESP32-RevK/blob/master/Manuals/Seasonal.md'>season code</a>.");
+   revk_web_setting (req, "Startup", "startup");
+   revk_web_setting (req, "Image URL", "imageurl");
    revk_web_setting (req, "Image check", "recheck");
-   revk_web_setting (req, "Clock size", "showtime");
-   revk_web_setting (req, "Reference date", "refdate");
-   revk_web_setting (req, "Day size", "showday");
-   revk_web_setting (req, "WiFi QR", "showqr");
-   revk_web_setting (req, "WiFi SSID", "showssid");
-   revk_web_setting (req, "WiFi Pass", "showpass");
-   if (showssid || showqr)
-      revk_web_setting (req, "SSID", "ssid");
-   if (showpass || showqr)
-      revk_web_setting (req, "Passphrase", "pass");
-   revk_web_setting (req, "Light pattern", "lights");
-   revk_web_setting (req, "Light on", "lighton");
-   revk_web_setting (req, "Light off", "lightoff");
    revk_web_setting (req, "Image invert", "gfxinvert");
+   if (rgb.set && leds > 1)
+   {
+      revk_web_setting_title (req, "LEDs");
+      revk_web_setting (req, "Light pattern", "lights");
+      revk_web_setting (req, "Light on", "lighton");
+      revk_web_setting (req, "Light off", "lightoff");
+   }
+   revk_web_setting_title (req, "Overlay widgets");
+   revk_web_setting_info (req,
+                          "Sizes are text size and can include <tt>&lt;</tt> and <tt>&gt;</tt> for alignment, and <tt>_</tt> to add separation line.");
+   revk_web_setting (req, "Bins (top of display)", "binsurl");
+   if (*binsurl)
+      revk_web_setting (req, "Icons", "iconsurl");
+   revk_web_setting (req, "WiFi SSID size", "showssid");
+   if (showssid)
+   {
+      revk_web_setting (req, "WiFi Pass size", "showpass");
+      revk_web_setting (req, "WiFi SSID", "ssid");
+      revk_web_setting (req, "WiFi Pass", "pass");
+      revk_web_setting (req, "WiFi QR", "showqr");
+   }
+   revk_web_setting (req, "Sunset", "showset");
+   revk_web_setting (req, "Sunrise", "showrise");
+   if (showset || showrise)
+   {
+      revk_web_setting (req, "Location", "poslat");
+      revk_web_setting (req, "Location", "poslon");
+   }
+   int y,
+     m,
+     d;
+   if (showtime && *refdate && sscanf (refdate, "%d-%d-%d", &y, &m, &d) < 3)
+   {
+      revk_web_setting (req, "Hostname", "showhost");
+      revk_web_setting (req, "Vesrion", "fbversion");
+      revk_web_setting (req, "Description", "showdesc");
+   }
+   revk_web_setting (req, "Day size", "showday");
+   revk_web_setting (req, "Clock size", "showtime");
+   if (showtime)
+      revk_web_setting (req, "Countdown", "refdate");
 }
