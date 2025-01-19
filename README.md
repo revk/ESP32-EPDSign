@@ -1,16 +1,4 @@
-# Amazon
-
-This part if for Amazon - as this is the *manufacturers web site* and so used as proof of title and list price. It is also links to where you can buy.
-
-|ASIN|List price|Title|
-|-----|----|----|
-|[B0CQ8Y292Y](https://www.amazon.co.uk/dp/B0CQ8Y292Y)|£30.00|ESP32-S3 Waveshare e-paper driver with battery circuit|
-|[B0CPYJ19NM](https://www.amazon.co.uk/dp/B0CPYJ19NM)|£35.00|ESP32-S3 Waveshare e-paper driver for 7.5" E-paper panel (esphome compatible)|
-
-Bullet points - as manufacturer this is what we want on Amazon
-
-<img width="709" alt="Screenshot 2025-01-03 at 14 22 20" src="https://github.com/user-attachments/assets/c3dada72-5eaf-4db0-8e16-9ce79f8f8af3" />
-
+# E-Paper boards
 
 ## Trademark
 
