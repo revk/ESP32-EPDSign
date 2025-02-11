@@ -26,13 +26,13 @@ gpio	relay						// Relay output
 
 #endif
 
-gpio    sd.dat2                         // MicroSD DAT2
-gpio    sd.dat3         .old="sdss"     // MicroSD DAT3
-gpio    sd.cmd          .old="sdmosi"   // MicroSD CMD
-gpio    sd.clk          .old="sdsck"    // MicroSD CLK
-gpio    sd.dat0         .old="sdmiso"   // MicroSD DAT0
-gpio    sd.dat1                         // MicroSD DAT1
-gpio    sd.cd                           // MicroSD CD
+gpio    sd.dat2                         	// MicroSD DAT2
+gpio    sd.dat3         3	.old="sdss"     // MicroSD DAT3 / SS
+gpio    sd.cmd          4	.old="sdmosi"   // MicroSD CMD / MOSI
+gpio    sd.clk          5	.old="sdsck"    // MicroSD CLK
+gpio    sd.dat0         6	.old="sdmiso"   // MicroSD DAT0 / MISO
+gpio    sd.dat1                			// MicroSD DAT1
+gpio    sd.cd           -7                	// MicroSD CD
 
 u8	gfx.flip	6				// E-paper Flip
 bit	gfx.invert	1				// E-paper invert
@@ -41,10 +41,10 @@ u8	leds		25				// Number of LEDs
 u32	refresh		86400	.unit="s"		// Full refresh time
 u32	recheck		60	.live=1 .unit="s"	// Live check time
 u8	fast		3	.live=1			// Use fast updates even for major image change
-u8	show.time		.live=1	.flags="< >_"	// Show clock (size 1-18, and <, >, or _)
+u8	show.time	18	.live=1	.flags="< >_"	// Show clock (size 1-18, and <, >, or _)
 u8	show.host		.live=1	.flags="< >_"	// Show SNMP host (size 1-18, and <, >, or _)
 u8	show.desc		.live=1	.flags="< >_"	// Show SNMP desc (size 1-18, and <, >, or _)
-u8	show.day		.live=1	.flags="< >_"	// Show day (size 1-9, and <, >, or _)
+u8	show.day	9	.live=1	.flags="< >_"	// Show day (size 1-9, and <, >, or _)
 u8	show.defcon		.live=1 .flags="< >_"	// Show DEFCON level from DEFCON/n messages (size 1-18, and <, >, or _)
 #ifdef	CONFIG_REVK_SOLAR
 u8	show.set		.live=1 .flags="< >_"	// Show sunset (size 1-18, and <, >, or _)

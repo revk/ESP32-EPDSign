@@ -25,6 +25,8 @@ static const char TAG[] = "EPDSign";
 #define MINSIZE	4
 
 const char sd_mount[] = "/sd";
+uint64_t sdsize = 0,            // SD card data
+   sdfree = 0;
 
 static struct
 {                               // Flags
@@ -488,7 +490,10 @@ app_main ()
          revk_error ("SD", &j);
          card = NULL;
       } else
-         ESP_LOGE (TAG, "SD Mounted");
+      {
+         esp_vfs_fat_info (sd_mount, &sdsize, &sdfree);
+         ESP_LOGE (TAG, "SD Mounted %llu/%llu", sdfree, sdsize);
+      }
    }
    gfx_lock ();
    gfx_clear (0);
@@ -578,6 +583,8 @@ app_main ()
             }
             if (override)
             {
+               if (sdsize)
+                  p += sprintf (p, "/ /[2]SD free %lluG of %lluG/ /", sdfree / 1000000000ULL, sdsize / 1000000000ULL);
                ESP_LOGE (TAG, "%s", msg);
                gfx_lock ();
                gfx_message (msg);
