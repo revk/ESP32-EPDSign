@@ -449,7 +449,7 @@ app_main ()
       gpio_set_level (gfxena.num, gfxena.invert);       // Enable
    }
    {
-    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert,brutal:fastbrutal);
+    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert);
       if (e)
       {
          ESP_LOGE (TAG, "gfx %s", e);
