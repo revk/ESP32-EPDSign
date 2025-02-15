@@ -616,6 +616,8 @@ app_main ()
       }
       if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
+      if (now / 60 != min)
+         reshow = 3;
       min = now / 60;
       struct tm t;
       localtime_r (&now, &t);
