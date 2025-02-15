@@ -449,7 +449,7 @@ app_main ()
       gpio_set_level (gfxena.num, gfxena.invert);       // Enable
    }
    {
-    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert);
+    const char *e = gfx_init (cs: gfxcs.num, sck: gfxsck.num, mosi: gfxmosi.num, dc: gfxdc.num, rst: gfxrst.num, busy: gfxbusy.num, flip: gfxflip, direct: 1, invert:gfxinvert,brutal:fastbrutal);
       if (e)
       {
          ESP_LOGE (TAG, "gfx %s", e);
@@ -1069,7 +1069,7 @@ app_main ()
             when = 0;
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
-         gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
+         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
          y -= s * 10;
       }
       if (showrise && (poslat || poslon))
@@ -1081,7 +1081,7 @@ app_main ()
             when = 0;
          struct tm tm = { 0 };
          localtime_r (&when, &tm);
-         gfx_7seg (s, "%2d:%02d", tm.tm_hour, tm.tm_min);
+         gfx_7seg (s, "%02d:%02d", tm.tm_hour, tm.tm_min);
          y -= s * 10;
       }
 #endif
