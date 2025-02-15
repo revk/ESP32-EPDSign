@@ -616,7 +616,7 @@ app_main ()
       }
       if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
-      if (now / 60 != min)
+      if (now / 60 != min && reshow < 3)
          reshow = 3;
       min = now / 60;
       struct tm t;
@@ -726,7 +726,7 @@ app_main ()
       {                         // Periodic refresh, e.g.once a day
          fresh = now / refresh;
          gfx_refresh ();
-      } else if (response == 200 && !showtime)
+      } else if (response == 200)
       {                         // Image changed
          if (fast)
             reshow = fast;      // Fast update
