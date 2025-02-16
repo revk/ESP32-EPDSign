@@ -14,6 +14,10 @@ It can be compiled to work with a variety of panels as per [GFX library](https:/
 
 It uses the [RevK library](https://github.com/revk/ESP32-RevK) so handles MQTT commands and settings as per that library.
 
+# PCBs
+
+See [GFX library](https://github.com/revk/ESP32-GFX/tree/main/PCB)
+
 ## Settings
 
 |Setting|Meaning|
