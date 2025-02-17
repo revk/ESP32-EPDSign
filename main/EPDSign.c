@@ -514,6 +514,7 @@ app_main ()
       uint32_t up = uptime ();
       if (b.wificonnect)
       {
+         gfx_refresh ();
          b.startup = 1;
          b.wificonnect = 0;
          if (startup)
