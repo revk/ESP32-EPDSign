@@ -497,6 +497,16 @@ app_main ()
    }
    gfx_lock ();
    gfx_clear (0);
+   for (int y = 0; y < gfx_height (); y++)
+      for (int x = (y & 1); x < gfx_width (); x += 2)
+         gfx_pixel (x, y, 255);
+   gfx_refresh ();
+   gfx_unlock ();
+   gfx_lock ();
+   gfx_clear (0);
+   for (int y = 0; y < gfx_height (); y++)
+      for (int x = 1 - (y & 1); x < gfx_width (); x += 2)
+         gfx_pixel (x, y, 255);
    gfx_refresh ();
    gfx_unlock ();
    uint32_t fresh = 0;
@@ -514,7 +524,7 @@ app_main ()
       uint32_t up = uptime ();
       if (b.wificonnect)
       {
-         gfx_refresh ();
+	      gfx_refresh();
          b.startup = 1;
          b.wificonnect = 0;
          if (startup)
