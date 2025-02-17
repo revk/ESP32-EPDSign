@@ -250,6 +250,7 @@ download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size
    ESP_LOGD (TAG, "Get %s %d", url, response);
    if (response != 304)
    {
+      if (response != 200)
       {
          jo_t j = jo_object_alloc ();
          jo_string (j, "url", url);
@@ -524,7 +525,7 @@ app_main ()
       uint32_t up = uptime ();
       if (b.wificonnect)
       {
-	      gfx_refresh();
+         gfx_refresh ();
          b.startup = 1;
          b.wificonnect = 0;
          if (startup)

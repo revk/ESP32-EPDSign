@@ -38,7 +38,7 @@ u8	gfx.flip	6				// E-paper Flip
 bit	gfx.invert	1				// E-paper invert
 u8	startup		10	.unit="s"		// Start up message
 u8	leds		25				// Number of LEDs
-u32	refresh		86400	.unit="s"		// Full refresh time
+u32	refresh		86400	.live=1 .unit="s"		// Full refresh time
 u32	recheck		60	.live=1 .unit="s"	// Live check time
 u8	fast		3	.live=1			// Use fast updates even for major image change
 u8	show.time	18	.live=1	.flags="< >_"	// Show clock (size 1-18, and <, >, or _)
