@@ -614,7 +614,7 @@ app_main ()
                   gfx_qr (qr2, max);
                }
                gfx_unlock ();
-	       reshow=(fast?:3);
+               reshow = (fast ? : 3);
             }
             free (qr1);
             free (qr2);
@@ -624,19 +624,20 @@ app_main ()
       {
          if (override < up)
             min = override = 0;
-         else if(reshow)
-	 {
-		 reshow--;
-		 gfx_lock();
-		 gfx_unlock();
-	 }
-	 else
+         else
+         {
+            if (reshow)
+            {
+               reshow--;
+               gfx_force ();
+            }
             continue;
+         }
       }
       if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
       if (now / 60 != min && reshow < 3)
-         reshow = (fast?:3);
+         reshow = (fast ? : 3);
       min = now / 60;
       struct tm t;
       localtime_r (&now, &t);
