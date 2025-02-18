@@ -9,8 +9,6 @@ gpio	gfx.dc		37				// E-paper DC
 gpio	gfx.rst		36				// E-paper RST
 gpio	gfx.busy	35				// E-paper BUSY
 
-gpio	relay		8				// Relay output
-
 #else
 
 gpio	rgb						// RGB GPIO
@@ -22,9 +20,12 @@ gpio	gfx.dc		40				// E-paper DC
 gpio	gfx.rst		41				// E-paper RST
 gpio	gfx.busy	42				// E-paper BUSY
 
-gpio	relay						// Relay output
-
 #endif
+
+u8	gfx.repeat	3	.live=1			// E-paper fast update repeat
+bit	gfx.night	1	.live=1			// E-paper overnight refresh
+
+gpio	relay						// Relay output
 
 gpio    sd.dat2                         	// MicroSD DAT2
 gpio    sd.dat3         3	.old="sdss"     // MicroSD DAT3 / SS
@@ -40,7 +41,6 @@ u8	startup		10	.unit="s"		// Start up message
 u8	leds		25				// Number of LEDs
 u32	refresh		86400	.live=1 .unit="s"		// Full refresh time
 u32	recheck		60	.live=1 .unit="s"	// Live check time
-u8	fast		3	.live=1			// Use fast updates even for major image change
 u8	show.time	18	.live=1	.flags="< >_"	// Show clock (size 1-18, and <, >, or _)
 u8	show.host		.live=1	.flags="< >_"	// Show SNMP host (size 1-18, and <, >, or _)
 u8	show.desc		.live=1	.flags="< >_"	// Show SNMP desc (size 1-18, and <, >, or _)

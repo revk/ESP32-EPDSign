@@ -614,7 +614,7 @@ app_main ()
                   gfx_qr (qr2, max);
                }
                gfx_unlock ();
-               reshow = (fast ? : 3);
+               reshow = gfxrepeat;
             }
             free (qr1);
             free (qr2);
@@ -637,7 +637,7 @@ app_main ()
       if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
       if (now / 60 != min && reshow < 3)
-         reshow = (fast ? : 3);
+         reshow = gfxrepeat;
       min = now / 60;
       struct tm t;
       localtime_r (&now, &t);
@@ -663,8 +663,7 @@ app_main ()
             response = getimage (season);
          }
       }
-      if (response != 200 && image && !showtime && !fast && !b.redraw)
-         continue;
+      //if (response != 200 && image && !showtime && !gfxrepeat && !b.redraw) continue; // No time display
       b.redraw = 0;
       if (*binsurl && (!bins || now > binnext) && !revk_link_down ())
       {                         // Load bins
@@ -748,10 +747,10 @@ app_main ()
          gfx_refresh ();
       } else if (response == 200)
       {                         // Image changed
-         if (fast)
-            reshow = fast;      // Fast update
+         if (gfxrepeat && (!gfxnight || t.tm_hour < 2 || t.tm_hour >= 4))
+            reshow = gfxrepeat;      // Fast update
          else
-            gfx_refresh ();     // New image but not doing the regular clock updates
+            gfx_refresh ();     // Full update
          response = 0;
       }
       if (image)
