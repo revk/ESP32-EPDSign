@@ -70,4 +70,4 @@ u16	light.on		.live	.digits=4 .place="HHMM"	// Lights on time (HHMM)
 u16	light.off		.live	.digits=4 .place="HHMM"	// Lights off time (HHMM)
 
 
-it	fb.version		.live			// Assume SNMP desc is FireBrick, extract version
+bit	fb.version		.live			// Assume SNMP desc is FireBrick, extract version

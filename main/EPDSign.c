@@ -663,7 +663,6 @@ app_main ()
             response = getimage (season);
          }
       }
-      //if (response != 200 && image && !showtime && !gfxrepeat && !b.redraw) continue; // No time display
       b.redraw = 0;
       if (*binsurl && (!bins || now > binnext) && !revk_link_down ())
       {                         // Load bins
