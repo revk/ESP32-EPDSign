@@ -17,6 +17,7 @@ static const char TAG[] = "EPDSign";
 #include "iec18004.h"
 #include <hal/spi_types.h>
 #include <driver/gpio.h>
+#include "lwpng.h"
 
 #define	LEFT	0x80            // Flags on font size
 #define	RIGHT	0x40
@@ -37,9 +38,8 @@ static struct
 } volatile b = { 0 };
 
 volatile uint32_t override = 0;
-uint8_t *image = NULL;          // Current image
-time_t imagetime = 0;           // Current image time
 int defcon = -1;                // DEFCON level
+char season = 0;
 #define	BINMAX	6
 
 led_strip_handle_t strip = NULL;
@@ -160,7 +160,6 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    // Not for us or not a command from main MQTT
    if (!strcmp (suffix, "setting"))
    {
-      imagetime = 0;
       b.redraw = 1;
       return "";
    }
@@ -192,17 +191,86 @@ app_callback (int client, const char *prefix, const char *target, const char *su
    return NULL;
 }
 
-int
-download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size)
+typedef struct file_s
 {
-   ESP_LOGD (TAG, "Get %s %lu", url, size);
-   time_t now = time (0);
-   uint8_t *image = NULL;
-   if (imagep)
-      image = *imagep;
-   time_t imagetime = 0;
-   if (imagetimep)
-      imagetime = *imagetimep;
+   struct file_s *next;         // Next file in chain
+   char *url;                   // URL as passed to download
+   uint32_t cache;              // Cache until this uptiome
+   time_t changed;              // Last changed
+   uint32_t size;               // File size
+   uint32_t w;                  // PNG width
+   uint32_t h;                  // PNG height
+   uint8_t *data;               // File data
+   uint8_t new:1;               // New file
+   uint8_t card:1;              // We have tried card
+   uint8_t json:1;              // Is JSON
+} file_t;
+
+file_t *files = NULL;
+
+file_t *
+find_file (char *url)
+{
+   file_t *i;
+   for (i = files; i && strcmp (i->url, url); i = i->next);
+   if (!i)
+   {
+      i = mallocspi (sizeof (*i));
+      if (i)
+      {
+         memset (i, 0, sizeof (*i));
+         i->url = strdup (url);
+         i->next = files;
+         files = i;
+      }
+   }
+   return i;
+}
+
+void
+check_file (file_t * i)
+{
+   if (!i || !i->data || !i->size)
+      return;
+   i->changed = time (0);
+   const char *e1 = lwpng_get_info (i->size, i->data, &i->w, &i->h);
+   if (!e1)
+   {
+      i->json = 0;              // PNG
+      i->new = 1;
+      ESP_LOGE (TAG, "Image %s len %lu width %lu height %lu", i->url, i->size, i->w, i->h);
+   } else
+   {                            // Not a png
+      jo_t j = jo_parse_mem (i->data, i->size);
+      jo_skip (j);
+      const char *e2 = jo_error (j, NULL);
+      jo_free (&j);
+      if (!e2)
+      {                         // Valid JSON
+         i->json = 1;
+         i->new = 1;
+         i->w = i->h = 0;
+         ESP_LOGE (TAG, "JSON %s len %lu", i->url, i->size);
+      } else
+      {                         // Not sensible
+         free (i->data);
+         i->data = NULL;
+         i->size = 0;
+         i->w = i->h = 0;
+         i->changed = 0;
+         ESP_LOGE (TAG, "Unknown %s error %s %s", i->url, e1 ? : "", e2 ? : "");
+      }
+   }
+}
+
+file_t *
+download (char *url)
+{
+   file_t *i = find_file (url);
+   if (!i)
+      return i;
+   url = strdup (i->url);       // Use as is
+   ESP_LOGD (TAG, "Get %s", url);
    int32_t len = 0;
    uint8_t *buf = NULL;
    esp_http_client_config_t config = {
@@ -211,43 +279,59 @@ download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size
       .timeout_ms = 20000,
    };
    int response = -1;
-   if (!revk_link_down ())
+   if (i->cache > uptime ())
+      response = (i->data ? 304 : 404); // Cached
+   else if (!revk_link_down () && (!strncasecmp (url, "http://", 7) || !strncasecmp (url, "https://", 8)))
    {
+      i->cache = uptime () + recheck;
       esp_http_client_handle_t client = esp_http_client_init (&config);
       if (client)
       {
-         if (imagetime)
+         if (i->changed)
          {
             char when[50];
             struct tm t;
-            gmtime_r (&imagetime, &t);
+            gmtime_r (&i->changed, &t);
             strftime (when, sizeof (when), "%a, %d %b %Y %T GMT", &t);
             esp_http_client_set_header (client, "If-Modified-Since", when);
          }
          if (!esp_http_client_open (client, 0))
          {
             len = esp_http_client_fetch_headers (client);
-            if (len == size)
+            ESP_LOGD (TAG, "%s Len %ld", url, len);
+            if (!len)
+            {                   // Dynamic, FFS
+               size_t l;
+               FILE *o = open_memstream ((char **) &buf, &l);
+               if (o)
+               {
+                  char temp[64];
+                  while ((len = esp_http_client_read (client, temp, sizeof (temp))) > 0)
+                     fwrite (temp, len, 1, o);
+                  fclose (o);
+                  len = l;
+               }
+               if (!buf)
+                  len = 0;
+            } else
             {
-               buf = mallocspi (size);
+               buf = mallocspi (len);
                if (buf)
-                  len = esp_http_client_read_response (client, (char *) buf, size);
+                  len = esp_http_client_read_response (client, (char *) buf, len);
             }
             response = esp_http_client_get_status_code (client);
-            if (response == 200 && len != size)
-               ESP_LOGE (TAG, "Wrong size %s (%ld expected %lu)", url, len, size);
-            else if (response != 200 && response != 304)
+            if (response != 200 && response != 304)
                ESP_LOGE (TAG, "Bad response %s (%d)", url, response);
             esp_http_client_close (client);
          }
          esp_http_client_cleanup (client);
       }
+      ESP_LOGD (TAG, "Got %s %d", url, response);
    }
-   ESP_LOGD (TAG, "Get %s %d", url, response);
    if (response != 304)
    {
       if (response != 200)
-      {
+      {                         // Failed
          jo_t j = jo_object_alloc ();
          jo_string (j, "url", url);
          if (response && response != -1)
@@ -255,71 +339,91 @@ download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size
          if (len == -ESP_ERR_HTTP_EAGAIN)
             jo_string (j, "error", "timeout");
          else if (len)
-         {
             jo_int (j, "len", len);
-            if (len != size)
-               jo_int (j, "expect", size);
-         }
          revk_error ("image", &j);
       }
-      if (len == size && buf)
+      if (buf)
       {
-         if (gfxinvert && size == gfx_width () * gfx_height () / 8)
-            for (int32_t i = 0; i < size; i++)
-               buf[i] ^= 0xFF;
-         if (image && !memcmp (buf, image, size))
+         if (i->data && i->size == len && !memcmp (buf, i->data, len))
+         {
+            free (buf);
             response = 0;       // No change
-         free (image);
-         image = buf;
-         imagetime = now;
+         } else
+         {                      // Change
+            free (i->data);
+            i->data = buf;
+            i->size = len;
+            check_file (i);
+         }
          buf = NULL;
       }
    }
    if (card)
    {                            // SD
       char *s = strrchr (url, '/');
+      if (!s)
+         s = url;
       if (s)
       {
          char *fn = NULL;
-         asprintf (&fn, "%s%s", sd_mount, s);
-         if (image && response == 200)
+         if (*s == '/')
+            s++;
+         asprintf (&fn, "%s/%s", sd_mount, s);
+         char *q = fn + sizeof (sd_mount);
+         while (*q && isalnum ((int) (uint8_t) * q))
+            q++;
+         if (*q == '.')
+         {
+            q++;
+            while (*q && isalnum ((int) (uint8_t) * q))
+               q++;
+         }
+         *q = 0;
+         if (i->data && response == 200)
          {                      // Save to card
             FILE *f = fopen (fn, "w");
             if (f)
             {
                jo_t j = jo_object_alloc ();
-               if (fwrite (image, size, 1, f) != 1)
+               if (fwrite (i->data, i->size, 1, f) != 1)
                   jo_string (j, "error", "write failed");
                fclose (f);
                jo_string (j, "write", fn);
                revk_info ("SD", &j);
-               ESP_LOGE (TAG, "Write %s", fn);
+               ESP_LOGE (TAG, "Write %s %lu", fn, i->size);
             } else
                ESP_LOGE (TAG, "Write fail %s", fn);
-         } else if (!image || (response && response != 304))
+         } else if (!i->card && (!i->data || (response && response != 304 && response != -1)))
          {                      // Load from card
+            i->card = 1;        // card tried, no need to try again
             FILE *f = fopen (fn, "r");
             if (f)
             {
-               if (!buf)
-                  buf = mallocspi (size);
+               struct stat s;
+               fstat (fileno (f), &s);
+               free (buf);
+               buf = mallocspi (s.st_size);
                if (buf)
                {
-                  if (fread (buf, size, 1, f) == 1)
+                  if (fread (buf, s.st_size, 1, f) == 1)
                   {
-                     if (image && !memcmp (buf, image, size))
+                     if (i->data && i->size == s.st_size && !memcmp (buf, i->data, i->size))
+                     {
+                        free (buf);
                         response = 0;   // No change
-                     else
+                     } else
                      {
                         ESP_LOGE (TAG, "Read %s", fn);
                         jo_t j = jo_object_alloc ();
                         jo_string (j, "read", fn);
                         revk_info ("SD", &j);
                         response = 200; // Treat as received
-                        free (image);
-                        image = buf;
-                        buf = NULL;
+                        free (i->data);
+                        i->data = buf;
+                        i->size = s.st_size;
+                        check_file (i);
                      }
+                     buf = NULL;
                   }
                }
                fclose (f);
@@ -330,39 +434,48 @@ download (uint8_t ** imagep, time_t * imagetimep, const char *url, uint32_t size
       }
    }
    free (buf);
-   if (imagep)
-      *imagep = image;
-   if (imagetimep)
-      *imagetimep = imagetime;
-   return response;
+   free (url);
+   return i;
 }
 
-int
-getimage (char season)
+// Image plot
+
+typedef struct plot_s
 {
-   if (!*imageurl)
-      return 0;
-   int l = strlen (imageurl);
-   char *url = mallocspi (l + 3);
-   strcpy (url, imageurl);
-   char *s = strrchr (url, '*');
-   if (s)
-   {
-      if (season)
-         *s = season;
-      else
-         while (*s++)
-            s[-1] = *s;
-   } else if (season)
-   {
-      url[l++] = '?';
-      url[l++] = season;
-      url[l] = 0;
-   }
-   const int size = gfx_width () * gfx_height () / 8;
-   int response = download (&image, &imagetime, url, size);
-   free (url);
-   return response;
+   gfx_pos_t ox,
+     oy;
+} plot_t;
+
+static void *
+my_alloc (void *opaque, uInt items, uInt size)
+{
+   return mallocspi (items * size);
+}
+
+static void
+my_free (void *opaque, void *address)
+{
+   free (address);
+}
+
+static const char *
+pixel (void *opaque, uint32_t x, uint32_t y, uint16_t r, uint16_t g, uint16_t b, uint16_t a)
+{
+   plot_t *p = opaque;
+   if (a & 0x8000)
+      gfx_pixel (p->ox + x, p->oy + y, (g & 0x8000) ? 255 : 0);
+   return NULL;
+}
+
+void
+plot (file_t * i, gfx_pos_t ox, gfx_pos_t oy)
+{
+   plot_t settings = { ox, oy };
+   lwpng_t *p = lwpng_init (&settings, NULL, &pixel, &my_alloc, &my_free, NULL);
+   lwpng_data (p, i->size, i->data);
+   const char *e = lwpng_end (&p);
+   if (e)
+      ESP_LOGE (TAG, "PNG fail %s", e);
 }
 
 //--------------------------------------------------------------------------------
@@ -599,21 +712,32 @@ app_main ()
          showlights (lighton == lightoff || (lighton < lightoff && lighton <= hhmm && lightoff > hhmm)
                      || (lightoff < lighton && (lighton <= hhmm || lightoff > hhmm)) ? lights : "");
       }
-      int response = 0;
       {                         // Seasonal changes
-         static char lastseason = 0;
-         const char season = *revk_season (now);
-         if (lastseason != season)
-         {                      // Change of image
-            lastseason = season;
-            imagetime = 0;
-         }
-         if (!recheck || now / recheck != check || !imagetime)
+         season = *revk_season (now);
+         if (!recheck || now / recheck != check)
          {                      // Periodic image check
             if (recheck)
                check = now / recheck;
-            response = getimage (season);
          }
+      }
+      file_t *file = NULL;
+      if (*imageurl)
+      {
+         char *url = strdup (imageurl);
+         char *s = strrchr (url, '*');
+         if (season)
+         {
+            *s = season;
+            file = download (url);
+         }
+         if (!file || !file->size)
+         {
+            strcpy (s, s + 1);
+            file = download (url);
+         }
+         free (url);
+         if (file && !file->w)
+            file = NULL;
       }
       b.redraw = 0;
       // Static image
@@ -624,25 +748,28 @@ app_main ()
       {                         // Periodic refresh, e.g.once a day
          fresh = now / refresh;
          gfx_refresh ();
-      } else if (response == 200)
-      {                         // Image changed
+      } else if (file && file->new)
+      {
+         file->new = 0;
          if (gfxrepeat && (!gfxnight || t.tm_hour < 2 || t.tm_hour >= 4))
-            reshow = gfxrepeat;      // Fast update
+            reshow = gfxrepeat; // Fast update
          else
             gfx_refresh ();     // Full update
-         response = 0;
       }
-      if (image)
-         gfx_load (image);
-      else
-         gfx_clear (0);
-      if (!image && response > 0)
+      gfx_clear (0);
+      if (file)
+      {
+         gfx_colour (imageplot == REVK_SETTINGS_IMAGEPLOT_NORMAL || imageplot == REVK_SETTINGS_IMAGEPLOT_MASK ? 'K' : 'W');
+         gfx_background (imageplot == REVK_SETTINGS_IMAGEPLOT_NORMAL
+                         || imageplot == REVK_SETTINGS_IMAGEPLOT_MASKINVERT ? 'W' : 'K');
+         plot (file, 0, 0);
+      } else
       {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
-         gfx_7seg (9, "%d", response);
-         gfx_pos (0, 100, GFX_L | GFX_T);
          gfx_text (-1, "%s", *imageurl ? imageurl : "No URL set");
       }
+      gfx_colour ('K');
+      gfx_background ('B');
       // Info at bottom
       gfx_pos_t y = gfx_height () - 1;
       gfx_pos_t lasty = 0;
@@ -666,7 +793,7 @@ app_main ()
             s = MINSIZE;
          return s;
       }
-      if (showtime || !image)
+      if (showtime || !file)
       {
          int s = start (showtime);
          if (*refdate)

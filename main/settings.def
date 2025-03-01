@@ -57,6 +57,7 @@ s	ssid			.live			// WiFi SSID
 s	pass			.live			// WiFi Passphrase
 s	refdate			.live	.place="YYYY-MM-DD HH:MM:SS"		// Show days to/since YYYY-MM-DD instead of time (or IPv6 for SNMP uptime)
 s	image.url		.live			// Image URL (include a * for seasonal character)
+enum	image.plot		1	.live .enums="Normal,Invert,Mask,MaskInvert"	// Plot mode
 
 #ifdef	CONFIG_REVK_SOLAR
 s32	pos.lat			.live .decimal=7 .unit="°N"	// Latitude
