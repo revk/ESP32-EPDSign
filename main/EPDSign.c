@@ -39,10 +39,6 @@ static struct
 volatile uint32_t override = 0;
 uint8_t *image = NULL;          // Current image
 time_t imagetime = 0;           // Current image time
-time_t binnext = 0;
-time_t binfirst = 0;
-uint8_t bincount = 0;
-char *bins = NULL;
 int defcon = -1;                // DEFCON level
 #define	BINMAX	6
 
@@ -376,50 +372,6 @@ getimage (char season)
 #error 	Clash with CONFIG_REVK_APCONFIG set
 #endif
 
-typedef struct icon_s icon_t;
-struct icon_s
-{
-   icon_t *next;
-   const char *name;
-   uint8_t *icon;
-};
-icon_t *icons = NULL;
-
-void
-showicon (const char *name)
-{
-   icon_t *i;
-   for (i = icons; i && strcmp (i->name, name); i = i->next);
-   if (!i && iconsurl)
-   {
-      i = malloc (sizeof (*i));
-      if (i)
-      {
-         memset (i, 0, sizeof (*i));
-         int size = (gfx_width () / BINMAX + 7) / 8 * (gfx_width () / BINMAX);
-         char *url;
-         asprintf (&url, "%s/%s.mono0", iconsurl, name);
-         int response = download (&i->icon, NULL, url, size);
-         if (response == 200 && i->icon)
-         {
-            i->name = strdup (name);
-            i->next = icons;
-            icons = i;
-         } else
-         {
-            free (i->icon);
-            free (i);
-            i = NULL;
-         }
-         free (url);
-      }
-   }
-   if (!i)
-      gfx_text (1, "%s ", name);
-   else
-      gfx_icon2 (gfx_width () / BINMAX, gfx_width () / BINMAX, i->icon);
-}
-
 void
 app_main ()
 {
@@ -664,78 +616,6 @@ app_main ()
          }
       }
       b.redraw = 0;
-      if (*binsurl && (!bins || now > binnext) && !revk_link_down ())
-      {                         // Load bins
-         free (bins);
-         bins = NULL;
-         int32_t len = 0;
-         esp_http_client_config_t config = {
-            .url = binsurl,
-            .crt_bundle_attach = esp_crt_bundle_attach,
-            .timeout_ms = 60000,        // Can take time
-         };
-         esp_http_client_handle_t client = esp_http_client_init (&config);
-         if (client)
-         {
-            if (!esp_http_client_open (client, 0))
-            {
-               len = esp_http_client_fetch_headers (client);
-               if (!len)
-                  len = 1000;
-               if (len > 0 && len <= 1000)
-               {
-                  bins = mallocspi (len);
-                  if (bins)
-                  {
-                     len = esp_http_client_read_response (client, bins, len - 1);
-                     esp_http_client_close (client);
-                     if (len > 0)
-                     {
-                        bins[len] = 0;
-                        ESP_LOGD (TAG, "Bins %s", bins);
-                     } else
-                     {
-                        free (bins);
-                        bins = NULL;
-                     }
-                  }
-               }
-            }
-            esp_http_client_cleanup (client);
-         }
-         char binold = 0;       // We have some old entries, so need to keep checking regularly until web site catches up with now
-         if (bins)
-         {
-            binfirst = 0;
-            bincount = 0;
-            jo_t j = jo_parse_str (bins);
-            jo_type_t t = jo_next (j);  // Start object
-            while (t == JO_TAG)
-            {
-               char tag[20] = "",
-                  val[25] = "";
-               jo_strncpy (j, tag, sizeof (tag));
-               t = jo_next (j);
-               jo_strncpy (j, val, sizeof (val));
-               time_t this = parse_time (val);
-               if (this < binfirst)
-                  binold = 1;
-               if (this > now - 3600 && (!binfirst || this < binfirst))
-               {
-                  binfirst = this;
-                  bincount = 0;
-               }
-               if (this == binfirst)
-                  bincount++;
-               t = jo_skip (j);
-            }
-            jo_free (&j);
-            if (binfirst)
-               binnext = binfirst + 3600 + (esp_random () % 7200);
-         }
-         if (binold || binnext < now + 3600)
-            binnext = now + 3600 + (esp_random () % 7200);
-      }
       // Static image
       gfx_lock ();
       if (reshow)
@@ -756,49 +636,6 @@ app_main ()
          gfx_load (image);
       else
          gfx_clear (0);
-      if (*binsurl)
-      {                         // Lights and bins
-         char lights[10],
-          *l = lights;
-         if (bins && binfirst && bincount && binfirst < now + 8 * 86400)
-         {                      // Show next bin dates
-            gfx_pos (gfx_width () / 2, 0, GFX_C | GFX_T | GFX_V);
-            //gfx_text (-7, "NEXT BIN");
-            struct tm tm;
-            localtime_r (&binfirst, &tm);
-            gfx_text (-9, tm.tm_yday == t.tm_yday ? "* TODAY *" : tm.tm_yday == t.tm_yday + 1 ? "TOMORROW" : longday[tm.tm_wday]);
-            gfx_pos (gfx_width () / 2 - bincount * (gfx_width () / BINMAX / 2), gfx_y (), GFX_L | GFX_T | GFX_H);
-            jo_t j = jo_parse_str (bins);
-            jo_type_t t = jo_next (j);  // Start object
-            int count = 0;
-            while (t == JO_TAG && count < bincount)
-            {
-               char tag[20] = "",
-                  val[25] = "";
-               jo_strncpy (j, tag, sizeof (tag));
-               t = jo_next (j);
-               jo_strncpy (j, val, sizeof (val));
-               time_t this = parse_time (val);
-               if (this && this == binfirst)
-               {
-                  char *name = tag;
-                  if (*name && name[1] == ':')
-                  {
-                     if (l < lights + sizeof (lights) - 1)
-                        *l++ = *name;
-                     name += 2;
-                  }
-                  showicon (name);
-                  count++;
-               }
-               t = jo_skip (j);
-            }
-            jo_free (&j);
-         }
-         *l = 0;
-         showlights (*lights && binfirst < now + 86400 ? lights : "K");
-         b.lightoverride = 1;
-      }
       if (!image && response > 0)
       {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
@@ -1180,9 +1017,6 @@ revk_web_extra (httpd_req_t * req)
    revk_web_setting_title (req, "Overlay widgets");
    revk_web_setting_info (req,
                           "Sizes are text size and can include <tt>&lt;</tt> and <tt>&gt;</tt> for alignment, and <tt>_</tt> to add separation line.");
-   revk_web_setting (req, "Bins (top of display)", "binsurl");
-   if (*binsurl)
-      revk_web_setting (req, "Icons", "iconsurl");
    revk_web_setting (req, "WiFi SSID size", "showssid");
    if (showssid)
    {
