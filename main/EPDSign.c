@@ -724,6 +724,9 @@ app_main ()
       if (*imageurl)
       {
          char *url = strdup (imageurl);
+         char *m = strrchr (url, '.');
+         if (m && !strncmp (m, ".mono", 5))
+            strcpy (m, ".png"); // Backwards compatible bodge
          char *s = strrchr (url, '*');
          if (season)
          {
@@ -766,7 +769,7 @@ app_main ()
       } else
       {                         // Error
          gfx_pos (0, 0, GFX_L | GFX_T);
-         gfx_text (-1, "%s", *imageurl ? imageurl : "No URL set");
+         gfx_text (-2, "%s", *imageurl ? imageurl : "No URL set");
       }
       gfx_colour ('K');
       gfx_background ('B');
