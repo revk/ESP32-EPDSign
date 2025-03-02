@@ -578,7 +578,6 @@ app_main ()
    uint32_t fresh = 0;
    uint32_t min = 0;
    uint32_t check = 0;
-   uint8_t reshow = 0;
    char snmphost[65] = "";
    char snmpdesc[65] = "";
    while (1)
@@ -679,7 +678,6 @@ app_main ()
                   gfx_qr (qr2, max);
                }
                gfx_unlock ();
-               reshow = gfxrepeat;
             }
             free (qr1);
             free (qr2);
@@ -690,19 +688,10 @@ app_main ()
          if (override < up)
             min = override = 0;
          else
-         {
-            if (reshow)
-            {
-               reshow--;
-               gfx_force ();
-            }
             continue;
-         }
       }
       if (!b.startup || (now / 60 == min && !b.redraw))
          continue;              // Check / update every minute
-      if (now / 60 != min && reshow < 3)
-         reshow = gfxrepeat;
       min = now / 60;
       struct tm t;
       localtime_r (&now, &t);
@@ -745,8 +734,6 @@ app_main ()
       b.redraw = 0;
       // Static image
       gfx_lock ();
-      if (reshow)
-         reshow--;
       if (refresh && now / refresh != fresh)
       {                         // Periodic refresh, e.g.once a day
          fresh = now / refresh;
@@ -754,9 +741,7 @@ app_main ()
       } else if (file && file->new)
       {
          file->new = 0;
-         if (gfxrepeat && (!gfxnight || t.tm_hour < 2 || t.tm_hour >= 4))
-            reshow = gfxrepeat; // Fast update
-         else
+         if (gfxnight&& t.tm_hour >= 2 && t.tm_hour < 4)
             gfx_refresh ();     // Full update
       }
       gfx_clear (0);
@@ -1122,8 +1107,6 @@ app_main ()
       }
       start (0);
       gfx_unlock ();
-      if (reshow)
-         b.redraw = 1;
    }
 }
 

@@ -22,7 +22,6 @@ gpio	gfx.busy	42				// E-paper BUSY
 
 #endif
 
-u8	gfx.repeat	3	.live			// E-paper fast update repeat
 bit	gfx.night	1	.live			// E-paper overnight refresh
 
 gpio	relay						// Relay output
