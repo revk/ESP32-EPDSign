@@ -1,9 +1,12 @@
 # E-Paper boards
 
-This is no longer being maintained, use [EPD](https://github.com/revk/ESP32-EPD) instead.
-
 ---
 
+**This is no longer being maintained, use [EPD](https://github.com/revk/ESP32-EPD) instead.**
+
+The new code does all this did, and way more.
+
+---
 
 ## Trademark
 
